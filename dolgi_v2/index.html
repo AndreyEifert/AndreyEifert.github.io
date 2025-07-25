@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="/reload"></script>
+    <link rel="stylesheet" href="./style.css">
+    <style>
+    </style>
+</head>
+<body>
+    <div class="col" :is="!item">
+        <div class="row miny bb:,#333">
+            <div class="col g Pl:20">
+                <div class="fz:25 pt:4">Долги</div>
+            </div>
+            <div class="col minx tar g Pr:20">
+                <div class="fz:17">{{ total() }}</div>
+                <div>{{ total( 1 ) }}</div>
+            </div>
+        </div>
+        <div class="scroll bc:#383838">
+            <div>
+                <div class="row psr h:40 bb:,#282828 P:10,20 ovh" :for="i in items" >
+                    <div class="row w:100% psa h:100% w:100% item" :style="{ marginLeft: i.move + 'px' }">
+                        <div class="cy" @down="items_down( i, pos, el )">{{ i.name }}</div>
+                        <div class="cy end minx">{{ total_item( i ) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row miny W:100 g bt:,#333">
+            <div class="el c end" @down="items_add">add</div>
+            <div class="el c hidden">back</div>
+        </div>
+    </div>
+    <div class="col" :is="item">
+        <div class="row miny bb:,#333">
+            <div class="col g Pl:20">
+                <div class="fz:25 pt:4">{{ item.name }}</div>
+            </div>
+            <div class="col minx tar g Pr:20">
+                <div class="fz:17">{{ total_item( item ) }}</div>
+                <div>{{ total_item( item, 1 ) }}</div>
+            </div>
+        </div>
+        <div class="scroll bc:#383838">
+            <div>
+                <div class="row miny g c P:4,20 bb:,#282828" :for="i in item.items" >
+                        <div class="col">
+                            <div class="" @down="item_down( i, pos, el )">{{ i.name }}</div>
+                            <div class="mt:3 fz:10 c:#666">{{ get_date( i.date ) }}</div>
+                        </div>
+                        <div class="cy end minx" @down="money_down( i, el )">{{ i.money }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="row miny W:100 g bt:,#333">
+            <div class="el c end" @down="item_add">add</div>
+            <div class="el c" @down="{ data.item = null }">back</div>
+        </div>
+    </div>
+    <script src="./app.js"></script>
+    <script>
+        const E = document.createElement( 'input' )
+        E.className = 'empty'
+
+        const s                 = v => v < 10 ? '0' + v : v
+        const get_date          = v => {
+            v = new Date( v )
+            return `${ s( v.getDate() ) }.${ s( v.getMonth() + 1 ) }.${ s( v.getFullYear() ) } ${ s( v.getHours() ) }:${ s( v.getMinutes() ) }:${ s( v.getSeconds() ) } `
+        }
+
+        const now = new Date( Date.now() )
+        const min = new Date( now.getFullYear(), now.getMonth( ), 1, 0, 0, 0 ).getTime()
+        const max = new Date( now.getFullYear(), now.getMonth( ) + 1, 1, 0, 0, 0 ).getTime()
+        const off = 1000 * 60 * 60 * 24 * 31
+
+        function total ( is ) {
+
+            let t = 0;
+
+            for ( var i of D.items ) {
+                t += total_item( i, is )
+            }
+            return t
+        }
+        function total_item ( item, is ) {
+
+            let t = 0;
+
+            for ( var i of item.items ) {
+                if ( is && ( i.date < min || i.date > max ) ) continue
+                t += i.money || 0
+            }
+            
+            return t
+        }
+
+        const D = localStorage[ 'dolgi.0.0.2' ] ? JSON.parse( localStorage[ 'dolgi.0.0.2' ] ) : {
+            item:   null,
+            items:  [
+                { name: 'items_name 1', move: 0, items: [
+                    { name: 'item 1', money:  1000, date: Date.now() },
+                    { name: 'item 2', money:  1000, date: Date.now() },
+                    { name: 'item 2', money:  1000, date: Date.now() },
+                    { name: 'item 3', money: -1000, date: Date.now() },
+                    { name: 'item 4', money:  1000, date: Date.now() -off },
+                    { name: 'item 5', money: -1000, date: Date.now() -off },
+                    { name: 'item 6', money: -1000, date: Date.now() -off },
+                ] },
+                { name: 'items_name 2', move: 0, items: [
+                    { name: 'item 1', money:  1000, date: Date.now() },
+                    { name: 'item 2', money:  1000, date: Date.now() },
+                    { name: 'item 3', money: -1000, date: Date.now() -off },
+                    { name: 'item 4', money: -1000, date: Date.now() -off },
+                    { name: 'item 5', money: -1000, date: Date.now() -off },
+                ] },
+                { name: 'items_name 3', move: 0, items: [
+                    { name: 'item 1', money:  1000, date: Date.now() },
+                    { name: 'item 1', money:  1000, date: Date.now() },
+                    { name: 'item 1', money:  1000, date: Date.now() },
+                    { name: 'item 2', money:  1000, date: Date.now() },
+                    { name: 'item 3', money: -1000, date: Date.now() -off },
+                ] }
+            ]
+        }
+        const A = App( document.body, D ).check()
+        const R = [ 0, 0, 0, 0 ]
+
+        if ( D.item ) {
+            for ( var i of D.items ) {
+                if ( i.name === D.item.name ) D.item = i;
+            }
+        }
+
+        let I = null, x, y, mv, timer
+
+        A.func( 'items_add', () => {
+            D.items.push( { name: 'none', move: 0, items: [] } )
+        } )
+        A.func( 'items_down', ( i, pos, el ) => {
+
+            x = pos.clientX
+            y = pos.clientY
+
+            I = i; mv = 0; timer = setTimeout( function ( ) {
+
+                el.parentNode.insertBefore( E, el )
+                el.parentNode.removeChild( el )
+
+                E.type  = 'text'
+                E.value = i.name
+                
+                R[ 0 ] = i
+                R[ 1 ] = el
+                R[ 2 ] = 'name'
+
+                setTimeout( () => E.select(), 0);
+
+            }, 1000 );
+
+            window.addEventListener( A.MOVE, items_mh )
+            window.addEventListener( A.UP  , items_uh )
+
+            return null
+        } )
+        A.func( 'item_add', () => {
+            D.item.items.push( { name: 'none', money: 0, date: Date.now() } )
+        } )
+        A.func( 'item_down', ( i, pos, el ) => {
+
+            x = pos.clientX
+            y = pos.clientY
+
+            I = i; mv = 0; timer = setTimeout( function ( ) {
+
+                el.parentNode.insertBefore( E, el )
+                el.parentNode.removeChild( el )
+
+                E.type  = 'text'
+                E.value = i.name
+                
+                R[ 0 ] = i
+                R[ 1 ] = el
+                R[ 2 ] = 'name'
+
+                setTimeout( () => E.select(), 0);
+
+            }, 1000 );
+
+            window.addEventListener( A.MOVE, item_mh )
+            window.addEventListener( A.UP  , item_uh )
+
+            return null
+        } )
+        A.func( 'money_down', ( i, el ) => {
+
+            I = i;
+            el.parentNode.insertBefore( E, el )
+            el.parentNode.removeChild( el )
+
+            E.type  = 'number'
+            E.value = i.money
+            
+            R[ 0 ] = i
+            R[ 1 ] = el
+            R[ 2 ] = 'money'
+
+            setTimeout( () => E.select(), 0);
+
+            window.addEventListener( A.MOVE, item_mh )
+            window.addEventListener( A.UP  , item_uh )
+
+            return null
+        } )
+
+        function item_mh ( ev ) {
+            if ( Math.abs( mv ) < 5 ) {
+                mv += ev.movementX + ev.movementY
+            } else {
+                item_uh ( ev )
+            }
+        }
+        function item_uh ( ev ) {
+            clearTimeout( timer )
+
+            window.removeEventListener( A.MOVE, items_mh )
+            window.removeEventListener( A.UP  , items_uh )
+        }
+
+        function items_mh ( ev ) {
+
+            if ( Math.abs( mv ) < 5 ) {
+                mv += ev.movementX + ev.movementY
+            } else {
+                clearTimeout( timer )
+
+                const P = A.ISTOUCH ? ev.changedTouches[ 0 ]: ev
+                const ox = P.clientX - x
+
+                I.move = ox > 50 ? 50 : ox < -50 ? -50 : ox
+
+                A.check()
+            }
+        }
+        function items_uh ( ev ) {
+            if ( I.move <= -50 ) {
+                D.item = I
+            }
+            if ( I.move >=  50 ) {
+                for ( var j = D.items.length - 1; j >= 0; j-- ) {
+                    if ( D.items[ j ] === I ) {
+                        D.items.splice( j, 1 )
+                    }
+                }
+            }
+            I.move = 0
+
+            A.check()
+            
+            clearTimeout( timer )
+
+            window.removeEventListener( A.MOVE, items_mh )
+            window.removeEventListener( A.UP  , items_uh )
+        }
+
+        E.addEventListener( 'input', ev => {
+            R[ 0 ][ R[ 2 ] ] = E.type === 'text' ? E.value : parseFloat( E.value )
+            save()
+        } )
+        E.addEventListener( 'blur', ev => {
+
+            const [ I, el ] = R
+
+            E.parentNode.insertBefore( el, E )
+            E.parentNode.removeChild( E )
+
+            A.check()
+        } )
+
+        function save ( ) {
+            localStorage[ 'dolgi.0.0.2' ] = JSON.stringify( D )
+        }
+
+        window.addEventListener( 'beforeunload', save )
+    </script>
+</body>
+</html>
