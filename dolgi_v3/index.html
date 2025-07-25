@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href='style.css'>
+</head>
+<body>
+    <div class="col" :is="!item">
+        <div class="row miny c class_2">
+            <div class="row cy class_3">Долги</div>
+            <div class="col minx class_4">
+                <div class="class_5">{{ total() }}</div>
+                <div class="class_6">{{ total( true ) }}</div>
+            </div>
+        </div>
+        <div class="col scroll class_7">
+            <div>
+                <div class="class_8" :for="i in items">
+                    <div @down="items_d( i, pos, el, items )" class="item class_9">
+                        <div class="row">
+                            <div @down="items_name_d( i, el )">{{ i.name }}</div>
+                            <div class="minx">{{ total_item( i ) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row miny g class_12">
+            <div class=""></div>
+            <div class="el c" @down="items_add">add</div>
+            <div class=""></div>
+        </div>
+    </div>
+    <div class="col" :is="item">
+        <div class="row miny c class_15">
+            <div class="row cy class_16">{{ item.name }}</div>
+            <div class="col minx class_17">
+                <div class="class_18">{{ total_item( item ) }}</div>
+                <div class="class_19">{{  total_item( item, true ) }}</div>
+            </div>
+        </div>
+        <div class="col scroll class_20">
+            <div>
+                <div class="class_21" :for="i in item.items">
+                    <div @down="items_d( i, pos, el, item.items )" class="item class_22">
+                        <div class="row c">
+                            <div class="col">
+                                <div @down="items_name_d( i, el )">{{ i.name }}</div>
+                                <div class="class_25" @down="items_name_d( i, el )">{{ get_date( i.date ) }}</div>
+                            </div>
+                            <div class="minx" @down="items_date_d( i, el )">{{ i.money }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row miny g class_27">
+            <div class=""></div>
+            <div class="el c" @down="item_add">add</div>
+            <div class="el c" @down="{ data.item = null }">back</div>
+        </div>
+    </div>
+    <div class="layer c" :is="show">
+        <div class="class_31">
+            <div class="class_32">Удалить?</div>
+            <div class="row g class_33">
+                <div class="el c" @down="remove">ок</div>
+                <div class="el c" @down="{ data.show = false }">отмена</div>
+            </div>
+        </div>
+        <div class="layer class_36"></div>
+    </div>
+
+    <script src='./app.js'></script>
+    <script>
+        const E = document.createElement( 'input' )
+        E.className = 'empty'
+
+        const s        = v => v < 10 ? '0' + v : v
+        const get_date = v => {
+            v = new Date( v )
+            return `${ s( v.getDate() ) }.${ s( v.getMonth() + 1 ) }.${ s( v.getFullYear() ) } ${ s( v.getHours() ) }:${ s( v.getMinutes() ) }:${ s( v.getSeconds() ) } `
+        }
+
+        const off  = 1000 * 60 * 60 * 24 * 31
+        const now  = new Date( Date.now() )
+        const min  = new Date( now.getFullYear(), now.getMonth( ), 1, 0, 0, 0 ).getTime()
+        const max  = new Date( now.getFullYear(), now.getMonth( ) + 1, 1, 0, 0, 0 ).getTime()
+        const logs = localStorage[ 'dolgi.0.0.2_logs' ]
+            ? JSON.parse( localStorage[ 'dolgi.0.0.2_logs' ] ) : []
+
+        function total ( is ) {
+
+            let t = 0;
+
+            for ( var i of D.items ) {
+                t += total_item( i, is )
+            }
+            return t
+        }
+        function total_item ( item, is ) {
+
+            let t = 0;
+
+            for ( var i of item.items ) {
+                if ( is && ( i.date < min || i.date > max ) ) continue
+                t += i.money || 0
+            }
+            
+            return t
+        }
+
+        const D = localStorage[ 'dolgi.0.0.2' ] ? JSON.parse( localStorage[ 'dolgi.0.0.2' ] ) : {
+            item:   null,
+            show: false,
+            items:  []
+        }
+        const A = App( document.body, D ).check()
+
+        if ( D.item ) {
+            for ( var i of D.items ) {
+                if ( i.name === D.item.name ) D.item = i;
+            }
+        }
+
+        let I, EL, LIST, x, y, mv, ox, timer, KEY, change_log
+
+        A.func( 'items_d',      ( i, pos, el, list ) => {
+            x = pos.clientX
+            y = pos.clientY
+
+            EL = el; I = i; mv = false; LIST = list
+
+            window.addEventListener( A.MOVE, item_mh )
+            window.addEventListener( A.UP,   item_uh )
+        } )
+        A.func( 'items_name_d', ( i, el ) => {
+            timer = setTimeout( function () {
+                
+                I = i; EL = el; ox = 0;
+
+                E.value = i.name
+                E.type  = 'text'
+
+                KEY = 'name'
+
+                el.parentNode.insertBefore( E, el )
+                el.parentNode.removeChild ( el )
+
+                setTimeout( e => E.select(), 0 )
+
+                item_uh()
+            }, 1000 )
+
+            window.addEventListener( A.UP, break_h )
+        } )
+        A.func( 'items_date_d', ( i, el ) => {
+            timer = setTimeout( function () {
+                
+                I = i; EL = el; ox = 0;
+
+                E.value = i.name
+                E.type  = 'number'
+
+                KEY = 'money'
+
+                el.parentNode.insertBefore( E, el )
+                el.parentNode.removeChild ( el )
+
+                setTimeout( e => E.select(), 0 )
+
+                item_uh()
+            }, 1000 )
+
+            window.addEventListener( A.UP, break_h )
+        } )
+        A.func( 'remove',       ( ) => {
+            for ( var j = LIST.length - 1; j >= 0; j-- ) {
+                if ( LIST[ j ] === I ) {
+
+                    LIST.splice( j, 1 )
+                    A   .check()
+                    D   .show = false
+
+                    save()
+
+                    logs.push( {
+                        t: 'money' in I ? 'remove_item' : 'remove_items',
+                        I, LIST
+                    } )
+
+                    break
+                }
+            }
+        } )
+
+
+        A.func( 'item_add',  () => {
+            D.item.items.push( { name: 'none', money: 0,  date: Date.now() } )
+        } )
+        A.func( 'items_add', () => {
+            D.items.push( { name: 'none', items: [], date: Date.now() } )
+        } )
+
+
+        function item_mh ( ev ) {
+            const P  = A.ISTOUCH ? ev.changedTouches[ 0 ]: ev
+
+            ox = P.clientX - x
+            oy = P.clientY - y
+            
+            if ( Math.abs( oy ) > 15 ) {
+                EL.style.marginLeft = ''
+
+                clearTimeout( timer )
+                
+                window.removeEventListener( A.MOVE, item_mh )
+                window.removeEventListener( A.UP,   item_uh )
+
+                return
+            }
+            if ( mv ) {
+                const mn = 'money' in I ? 0 : -50
+
+                ox = P.clientX - x
+                ox = ox > 50 ? 50 : ox < mn ? mn : ox
+
+                EL.style.marginLeft = ox + 'px'
+            } else {
+                if ( Math.abs( ox ) > 10 ) {
+                    clearTimeout( timer )
+                    mv  = true
+
+                    x = P.clientX
+                }
+            }
+        }
+        function item_uh ( ev ) {
+            EL.style.marginLeft = ''
+
+            if ( ox >=  50 ) D.show = true
+            if ( ox <= -50 ) D.item = I
+            
+            A.check()
+            window.removeEventListener( A.MOVE, item_mh )
+            window.removeEventListener( A.UP,   item_uh )
+        }
+
+        function break_h ( ) {
+            clearTimeout( timer )
+            window.removeEventListener( A.UP, break_h )
+        }
+        function save ( ) {
+            localStorage[ 'dolgi.0.0.2'      ] = JSON.stringify( D )
+            localStorage[ 'dolgi.0.0.2_logs' ] = JSON.stringify( logs )
+        }
+
+        
+        E.addEventListener( 'input', ev => {
+
+            if ( !change_log ) {
+                logs.push( change_log = {
+                    t: 'money' in I ? 'change_name_item' : 'change_name_items',
+                    I, LIST, value: I[ KEY ], KEY
+                } )
+            }
+            
+            I[ KEY ] = E.type === 'number' ? parseFloat( E.value ) : E.value
+
+            if ( change_log ) {
+                change_log.new_value = I[ KEY ]
+            }
+            save()
+        } )
+        E.addEventListener( 'blur',  ev => {
+            E.parentNode.insertBefore( EL, E )
+            E.parentNode.removeChild ( E )
+
+            A.check()
+
+            change_log = null
+        } )
+
+        window.addEventListener( 'beforeunload', save )
+        window.addEventListener( 'contextmenu', ev => ev.preventDefault() )
+    </script>
+</body>
+</html>
