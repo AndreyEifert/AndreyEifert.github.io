@@ -8,72 +8,73 @@
     <link rel="stylesheet" href='style.css'>
 </head>
 <body>
-    <div class="col" :is="!item">
-        <div class="row miny c class_2">
-            <div class="row cy class_3">Долги</div>
-            <div class="col minx class_4">
-                <div class="class_5">{{ total() }}</div>
-                <div class="class_6">{{ total( true ) }}</div>
-            </div>
-        </div>
-        <div class="col scroll class_7">
-            <div>
-                <div class="class_8" :for="i in items">
-                    <div @down="items_d( i, pos, el, items )" class="item class_9">
-                        <div class="row">
-                            <div @down="items_name_d( i, el )">{{ i.name }}</div>
-                            <div class="minx">{{ total_item( i ) }}</div>
-                        </div>
-                    </div>
+    <div class="layer">
+        <div class="col" :is="!item">
+            <div class="row miny c class_2">
+                <div class="row cy class_3">Долги</div>
+                <div class="col minx class_4">
+                    <div class="class_5">{{ total() }}</div>
+                    <div class="class_6">{{ total( true ) }}</div>
                 </div>
             </div>
-        </div>
-        <div class="row miny g class_12">
-            <div class=""></div>
-            <div class="el c" @down="items_add">add</div>
-            <div class=""></div>
-        </div>
-    </div>
-    <div class="col" :is="item">
-        <div class="row miny c class_15">
-            <div class="row cy class_16">{{ item.name }}</div>
-            <div class="col minx class_17">
-                <div class="class_18">{{ total_item( item ) }}</div>
-                <div class="class_19">{{  total_item( item, true ) }}</div>
-            </div>
-        </div>
-        <div class="col scroll class_20">
-            <div>
-                <div class="class_21" :for="i in item.items">
-                    <div @down="items_d( i, pos, el, item.items )" class="item class_22">
-                        <div class="row c">
-                            <div class="col">
+            <div class="col scroll class_7">
+                <div>
+                    <div class="class_8" :for="i in items">
+                        <div @down="items_d( i, pos, el, items )" class="item class_9">
+                            <div class="row">
                                 <div @down="items_name_d( i, el )">{{ i.name }}</div>
-                                <div class="class_25" @down="items_name_d( i, el )">{{ get_date( i.date ) }}</div>
+                                <div class="minx">{{ total_item( i ) }}</div>
                             </div>
-                            <div class="minx" @down="items_date_d( i, el )">{{ i.money }}</div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="row miny g class_27">
-            <div class=""></div>
-            <div class="el c" @down="item_add">add</div>
-            <div class="el c" @down="{ data.item = null }">back</div>
-        </div>
-    </div>
-    <div class="layer c" :is="show">
-        <div class="class_31">
-            <div class="class_32">Удалить?</div>
-            <div class="row g class_33">
-                <div class="el c" @down="remove">ок</div>
-                <div class="el c" @down="{ data.show = false }">отмена</div>
+            <div class="row miny g class_12">
+                <div class=""></div>
+                <div class="el c" @down="items_add">add</div>
+                <div class=""></div>
             </div>
         </div>
-        <div class="layer class_36"></div>
+        <div class="col" :is="item">
+            <div class="row miny c class_15">
+                <div class="row cy class_16">{{ item.name }}</div>
+                <div class="col minx class_17">
+                    <div class="class_18">{{ total_item( item ) }}</div>
+                    <div class="class_19">{{  total_item( item, true ) }}</div>
+                </div>
+            </div>
+            <div class="col scroll class_20">
+                <div>
+                    <div class="class_21" :for="i in item.items">
+                        <div @down="items_d( i, pos, el, item.items )" class="item class_22">
+                            <div class="row c">
+                                <div class="col">
+                                    <div @down="items_name_d( i, el )">{{ i.name }}</div>
+                                    <div class="class_25" @down="items_name_d( i, el )">{{ get_date( i.date ) }}</div>
+                                </div>
+                                <div class="minx" @down="items_date_d( i, el )">{{ i.money }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row miny g class_27">
+                <div class=""></div>
+                <div class="el c" @down="item_add">add</div>
+                <div class="el c" @down="{ data.item = null }">back</div>
+            </div>
+        </div>
+        <div class="layer c" :is="show">
+            <div class="class_31">
+                <div class="class_32">Удалить?</div>
+                <div class="row g class_33">
+                    <div class="el c" @down="remove">ок</div>
+                    <div class="el c" @down="{ data.show = false }">отмена</div>
+                </div>
+            </div>
+            <div class="layer class_36"></div>
+        </div>
     </div>
-
     <script src='./app.js'></script>
     <script>
         const E = document.createElement( 'input' )
