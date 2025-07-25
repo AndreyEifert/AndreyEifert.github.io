@@ -1,0 +1,161 @@
+.item::before,
+.item::after {
+    content: 'E';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 100%;
+    height: 100%;
+    width: 50px;
+    font-size: 20px;
+    background-color: rgb(74, 94, 74);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.item::before {
+    content: 'D';
+    background-color: rgb(94, 74, 74);
+    right: 100%;
+    left: auto;
+}
+input.empty {
+    font-family: inherit;
+    font-size: inherit;
+    margin: 0;
+    border: none;
+    background-color: transparent;
+    color: inherit;
+    outline: none;
+}
+input[type=number] {
+    text-align: right;
+}
+input[type=number]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}body {
+    background-color: #444;
+    height: 100vh;
+    color: #ddd;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-size: 13px;
+    user-select: none;
+}
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+.col, .row, .col > *, .row > * {
+    height: 100%;
+    width:  100%;
+}
+.col, .row {
+    display: flex;
+}
+.col {
+    flex-direction: column;
+}
+.c {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.row > .cy {
+    display: flex;
+    align-items: center;
+}
+.min, .miny, .fit > *, .fity > * {
+    height: fit-content;
+}
+.min, .minx, .fit > *, .fitx > * {
+    width: fit-content;
+}
+
+.row > .end {
+    margin-left: auto;
+}
+.col > .end {
+    margin-top: auto;
+}
+
+.g { padding: 5px; }
+
+.row.g > *:not(:last-child) { margin-right: 5px; }
+.col.g > *:not(:last-child) { margin-bottom:  5px; }
+
+.scroll {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow: auto;
+}
+.scroll > * {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+}
+:root {
+    --s-c: #444;
+    --s-b: #333;
+    --s-bc: #222;
+}
+
+.item_name input[type=number] {
+    text-align: right;
+} 
+.item_name input {
+    font-family: inherit;
+    font-size: inherit;
+    padding: 5px 20px;
+    margin: 0;
+    border: none;
+    background-color: transparent;
+    color: inherit;
+    outline: none;
+}
+
+.hidden {
+    opacity: 0;
+}
+
+.el {
+    background-color: #333;
+    color: #bbb;
+    border: 2px solid #222;
+    border-radius: 2px;
+    padding: 4px 10px;
+}
+
+
+::-webkit-scrollbar,
+::-webkit-scrollbar-corner,
+::-webkit-scrollbar-thumb {
+    background-color:  var(--s-c);
+    border: 1px solid var(--s-b);
+    border-width: 1px 0 0 0;
+}
+::-webkit-scrollbar-thumb:vertical {
+    border-width: 0 0 0 1px;
+}
+::-webkit-scrollbar-corner {
+    border-width: 1px 0 0 1px;
+}
+::-webkit-scrollbar {
+    width:  10px;
+    height: 10px;
+    background-color: var(--s-bc);
+    border-width: 0 0 0 1px;
+}
+::-webkit-scrollbar:horizontal {
+    border-width: 1px 0 0 0;
+}
+.layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-color: #444;
+}
