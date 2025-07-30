@@ -218,26 +218,32 @@ input[type=number]::-webkit-inner-spin-button {
   pointer-events: none;
   padding: 5px 0px;
 }
-.class_32 {
-  pointer-events: none;
-  width: 100px;
-  padding: 5px 0px;
-}
-.class_33 > * {
-  width: 100px;
+.class_31 {
+  font-size: 12px;
+  color: #777;
+  padding-bottom: 5px;
 }
 .class_33 {
+  pointer-events: none;
+  width: 100px;
+  border: 1px solid #000;
+  padding: 15px 0px;
+}
+.class_34 > * {
+  width: 100px;
+}
+.class_34 {
   justify-content: space-between;
   padding: 10px 20px;
   border-top: 1px solid #282828;
 }
-.class_36 {
+.class_37 {
   position: relative;
 }
-.class_37 {
+.class_38 {
   z-index: 15;
 }
-.class_38 {
+.class_39 {
   width: fit-content;
   height: fit-content;
   background-color: #444;
@@ -246,17 +252,17 @@ input[type=number]::-webkit-inner-spin-button {
   border-radius: 3px;
   box-shadow: 0px 0px 10px 3px #000;
 }
-.class_39 {
+.class_40 {
   text-align: right;
   padding: 10px 25px;
 }
-.class_40 > * {
+.class_41 > * {
   width: 80px;
 }
-.class_40 {
+.class_41 {
   border-top: 1px solid #333;
 }
-.class_43 {
+.class_44 {
   z-index: 10;
   background-color: #0008;
 }

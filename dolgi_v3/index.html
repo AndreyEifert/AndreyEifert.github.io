@@ -57,18 +57,19 @@
             <div class="col scroll class_26">
                 <div>
                     <div class="div class_27" :for="i in item.items">
-                        <div class="item row class_28"  @down="item__d( i, el, pos )">
+                        <div class="item row c class_28"  @down="item__d( i, el, pos )">
                             <div class="col" @down="input_d( i, el )">
                                 <input class="class_30" type="text" :input="i.name" >
+                                <div class="class_31">{{ get_date( i.date ) }}</div>
                             </div>
                             <div class="col minx" @down="input_d( i, el )">
-                                <input class="class_32" type="number" :input="i.money" >
+                                <input class="class_33" type="number" :input="i.money" >
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="row miny class_33">
+            <div class="row miny class_34">
                 <div></div>
                 <div class="el c" @down="add">add</div>
                 <div class="el c" @down="{ data.item = null }">back</div>
@@ -76,17 +77,17 @@
         </div>
     </div>
 
-    <div class="layer class_36" :is="show">
-        <div class="layer c class_37" @up="{ data.show = false }">
-            <div class="col class_38">
-                <div class="class_39">Удалить?</div>
-                <div class="row g class_40">
+    <div class="layer class_37" :is="show">
+        <div class="layer c class_38" @up="{ data.show = false }">
+            <div class="col class_39">
+                <div class="class_40">Удалить?</div>
+                <div class="row g class_41">
                     <div class="el c" @up="remove( )">ok</div>
                     <div class="el c" @up="{ data.show = false }">Отмена</div>
                 </div>
             </div>
         </div>
-        <div class="layer blur class_43"></div>
+        <div class="layer blur class_44"></div>
     </div>
 
     <script src='/app/last/app.js'></script>
