@@ -1,0 +1,290 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src='/reload'></script>
+    <link rel="stylesheet" href='/dolgi/v7/style.css'>
+    <style>
+    </style>
+<link rel="stylesheet" href='/classes/dolgi/v7/index.html'>
+</head>
+<body class="class_1">
+    <div class="layer" :is="!item">
+        <div class="col">
+            <div class="row miny  class_4">
+                <div class="col class_5">
+                    <div class="class_6">Долги</div>
+                </div>
+                <div class="col minx class_7">
+                    <div class="class_8">{{ total() }}</div>
+                    <div class="class_9">{{ total( true ) }}</div>
+                </div>
+            </div>
+            <div class="col scroll class_10">
+                <div>
+                    <div class="div class_11" :for="i in items">
+                        <div class="item row class_12"  @down="item__d( i, el, pos )">
+                            <div class="row" @down="input_d( i, el, 1000 )">
+                                <input class="class_14" type="text" :input="i.name" >
+                            </div>
+                            <div class="minx class_15">{{ total_item( i ) }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row miny class_16">
+                <div></div>
+                <div class="el c" @down="add">add</div>
+                <div></div>
+            </div>
+        </div>
+    </div>
+    <div class="layer" :is="item">
+        <div class="col">
+            <div class="row miny  class_20">
+                <div class="col class_21">
+                    <div class="cy class_22">{{ item.name }}</div>
+                </div>
+                <div class="col minx class_23">
+                    <div class="class_24">{{ total_item( item ) }}</div>
+                    <div class="class_25">{{  total_item( item, true ) }}</div>
+                </div>
+            </div>
+            <div class="col scroll class_26">
+                <div>
+                    <div class="div class_27" :for="i in item.items">
+                        <div class="item row class_28"  @down="item__d( i, el, pos )">
+                            <div class="col" @down="input_d( i, el )">
+                                <input class="class_30" type="text" :input="i.name" >
+                            </div>
+                            <div class="col minx" @down="input_d( i, el )">
+                                <input class="class_32" type="number" :input="i.money" >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row miny class_33">
+                <div></div>
+                <div class="el c" @down="add">add</div>
+                <div class="el c" @down="{ data.item = null }">back</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="layer class_36" :is="show">
+        <div class="layer c class_37" @up="{ data.show = false }">
+            <div class="col class_38">
+                <div class="class_39">Удалить?</div>
+                <div class="row g class_40">
+                    <div class="el c" @up="remove( )">ok</div>
+                    <div class="el c" @up="{ data.show = false }">Отмена</div>
+                </div>
+            </div>
+        </div>
+        <div class="layer blur class_43"></div>
+    </div>
+
+    <script src='/app/last/app.js'></script>
+    <script>
+        const { body } = document
+        const s        = v => v < 10 ? '0' + v : v
+        const get_date = v => {
+            v = new Date( v )
+            return `${ s( v.getDate() ) }.${ s( v.getMonth() + 1 ) }.${ s( v.getFullYear() ) } ${ s( v.getHours() ) }:${ s( v.getMinutes() ) }:${ s( v.getSeconds() ) } `
+        }
+
+        const off  = 1000 * 60 * 60 * 24 * 31
+        const now  = new Date( Date.now() )
+        const min  = new Date( now.getFullYear(), now.getMonth( ), 1, 0, 0, 0 ).getTime()
+        const max  = new Date( now.getFullYear(), now.getMonth( ) + 1, 1, 0, 0, 0 ).getTime()
+
+        function total ( is ) {
+
+            let t = 0;
+
+            for ( var i of D.items ) {
+                t += total_item( i, is )
+            }
+            return t
+        }
+        function total_item ( item, is ) {
+
+            let t = 0;
+
+            for ( var i of item.items ) {
+                if ( is && ( i.date < min || i.date > max ) ) continue
+                t += i.money || 0
+            }
+            
+            return t
+        }
+
+        const L = localStorage[ 'dolgi_v7_logs' ] ? JSON.parse( localStorage[ 'dolgi_v7_logs' ] ) : []
+        const D = localStorage[ 'dolgi_v7'      ] ? JSON.parse( localStorage[ 'dolgi_v7'      ] ) : {
+            show: false,
+            item: null,
+            items: []
+        }
+
+        D.show = false
+        
+        if ( D.item ) {
+            for ( var i of D.items ) {
+                if ( i.name === D.item.name ) D.item = i;
+            }
+        }
+        
+        const A = App( body, D ).check()
+    
+        let I, EL, INP, x, y, ox, oy, timer, ox_min = -50, LOG
+
+        function mouse_move ( ev ) {
+            const P  = A.ISTOUCH ? ev.changedTouches[ 0 ]: ev
+
+            ox = P.clientX - x;
+
+            if ( oy !== null ) {
+
+                oy = P.clientY - y;
+
+                if ( Math.abs( ox ) > 15 ) {
+                    oy = null
+                    x  = P.clientX
+
+                    clearTimeout( timer )
+                }
+                if ( Math.abs( oy ) > 10 ) {
+                    break_h()
+                }
+            } else {
+                ox = ox > 50 ? 50 : ox < ox_min ? ox_min : ox
+                EL.style.marginLeft = ox + 'px'
+            }
+        }
+        function mouse_up   ( ev ) {
+
+            if ( ox == 50 ) {
+                D.show = true
+
+                A.check()
+            }
+            if ( ox == -50 ) {
+                D.item = I;
+                A.check()
+            }
+
+
+            EL.style.marginLeft = 0
+
+            break_h()
+        }
+        function break_h ( ) {
+
+            clearTimeout( timer )
+            
+            window.removeEventListener( A.MOVE, mouse_move )
+            window.removeEventListener( A.UP,   mouse_up   )
+        }
+        function blur__h ( ) {
+            INP = null
+            this.style.pointerEvents = 'none'
+            this.removeEventListener(  'blur', blur__h )
+            this.removeEventListener( 'input', input_h )
+        }
+        function input_h ( ) {
+            if ( this.type === 'number' ) {
+                LOG.new_money = I.money
+            } else {
+                LOG.new_name = I.name
+            }
+            
+            SAVE()
+        }
+
+        A.func( 'item__d', ( i, el, P  ) => {
+
+            x  = P.clientX
+            y  = P.clientY
+            I  = i
+            ox = 0
+            oy = 0
+            EL = el
+            ox_min = D.item ? 0 : -50
+            
+            window.addEventListener( A.MOVE, mouse_move )
+            window.addEventListener( A.UP,   mouse_up   )
+
+            return null
+        } )
+        A.func( 'input_d', ( i, el ) => {
+
+            if ( INP && INP.parentNode === el ) return
+            
+            timer = setTimeout( function () {
+                INP = el.children[ 0 ]
+                INP.focus()
+                INP.select()
+                INP.addEventListener(  'blur', blur__h )
+                INP.addEventListener( 'input', input_h )
+                INP.style.pointerEvents = 'all'
+
+                LOG = { item: I }
+                if ( INP.type === 'number' ) {
+                    LOG.money = I.money
+                } else {
+                    LOG.name = I.name
+                }
+                L.push( LOG )
+            }, 'money' in i === 'number' ? 500 : 1000 )
+
+            return null
+        } )
+        A.func( 'add', () => {
+            if ( D.item ) {
+                const i = { name: 'none', money: 0, date: Date.now() }
+
+                D.item.items.push( i )
+                L.push( { type: 'add', item: i, parent: D.item } )
+            } else {
+                const i = { name: 'none', items: [], date: Date.now() }
+
+                D.items.push( i )
+                L.push( { type: 'add', item: i } )
+            }
+            SAVE()
+        } )
+        A.func( 'remove', () => {
+            const m = D.item ? D.item.items : D.items
+
+            for ( var j = 0; j < m.length; j++ ) {
+                if ( m[ j ] === I ) {
+                    L.push( { type: 'remove', item: I, parent: D.item || null } )
+                    m.splice( j, 1 );
+                    break
+                }
+            }
+            
+            SAVE()
+        } )
+
+        function RS   ( ) {
+            body.style = '--root-height: ' + window.innerHeight + 'px'
+        }
+        function SAVE ( ) {
+            localStorage[ 'dolgi_v7' ]      = JSON.stringify( D )
+            localStorage[ 'dolgi_v7_logs' ] = JSON.stringify( L )
+
+            console.log( L );
+        }
+
+        RS()
+        window.addEventListener( 'resize', RS )
+        window.addEventListener( 'beforeunload', SAVE )
+    </script>
+</body>
+</html>

@@ -1,0 +1,262 @@
+
+:root {
+  --root-height: 100vh
+}
+body {
+  background-color: #444;
+  color: #ccc;
+  height: var(--root-height);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 13px;
+  user-select: none;
+  overflow: hidden;
+}
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+.col, .row, .col > *, .row > * {
+  height: 100%;
+  width:  100%;
+}
+.col, .row {
+  display: flex;
+}
+.col {
+  flex-direction: column;
+}
+.min, .miny { height: fit-content; }
+.min, .minx { width:  fit-content; }
+
+.g { padding: 5px; }
+.col.g > *:not(:last-child) { margin-bottom: 5px; }
+.row.g > *:not(:last-child) { margin-right: 5px; }
+
+.col > .end { margin-top:  auto; }
+.row > .end { margin-left: auto;}
+
+
+.c, .cy:not(.col) {
+  display: flex;
+  align-items: center;
+}
+.c, .cy.col {
+  display: flex;
+  justify-content: center;
+}
+.el {
+  padding: 4px 10px;
+  border: 2px solid #222;
+  background-color: #333;
+  border-radius: 2px;
+}
+.scroll {
+  position: relative;
+  height: 100%;
+  width:  100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.scroll > * {
+  position: absolute;
+  height: 100%;
+  width:  100%;
+}
+.item {
+  position: relative;
+}
+.item::before,
+.item::after {
+  content: 'E';
+  position: absolute;
+  top: 0;
+  left: 100%;
+  height: 100%;
+  width: 50px;
+  font-size: 20px;
+  background-color: rgb(74, 94, 74);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.item::before {
+  content: 'D';
+  background-color: rgb(94, 74, 74);
+  right: 100%;
+  left: auto;
+}
+input {
+  font-family: inherit;
+  font-size: inherit;
+  margin: 0;
+  border: none;
+  background-color: transparent;
+  color: inherit;
+  outline: none;
+}
+input[type=number] {
+  text-align: right;
+}
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  
+  height: var(--root-height);
+  width: 100%;
+  
+  z-index: 10;
+}
+:root {
+  --s-c: #444;
+  --s-b: #333;
+  --s-bc: #222;
+}
+::-webkit-scrollbar,
+::-webkit-scrollbar-corner,
+::-webkit-scrollbar-thumb {
+  background-color: #444;
+  border: 1px solid #333;
+  border-width: 1px 0 0 0;
+}
+::-webkit-scrollbar-thumb:vertical {
+  border-width: 0 0 0 1px;
+}
+::-webkit-scrollbar-corner {
+  border-width: 1px 0 0 1px;
+}
+::-webkit-scrollbar {
+  width:  10px;
+  height: 10px;
+  background-color: #222;
+  border-width: 0 0 0 1px;
+}
+.blur {
+  backdrop-filter: blur(5px);
+  transition: .2s;
+}
+.class_1 {
+  font-size: 16px;
+}
+.class_4 {
+  padding: 10px 20px;
+  border-bottom: 1px solid #282828;
+}
+.class_5 {
+  padding-top: 2px;
+}
+.class_6 {
+  font-size: 25px;
+}
+.class_7 > * {
+  text-align: right;
+}
+.class_8 {
+  font-size: 17px;
+}
+.class_9 {
+  margin-top: 5px;
+}
+.class_10 {
+  background-color: #333;
+}
+.class_11 {
+  border-bottom: 1px solid #282828;
+}
+.class_12 {
+  padding: 12px 20px;
+}
+.class_14 {
+  pointer-events: none;
+  padding: 5px 0px;
+}
+.class_15 {
+  padding: 5px 0px;
+}
+.class_16 > * {
+  width: 100px;
+}
+.class_16 {
+  justify-content: space-between;
+  padding: 10px 20px;
+  border-top: 1px solid #282828;
+}
+.class_20 {
+  padding: 10px 20px;
+  border-bottom: 1px solid #282828;
+}
+.class_21 {
+  padding-top: 2px;
+}
+.class_22 {
+  font-size: 25px;
+}
+.class_23 > * {
+  text-align: right;
+}
+.class_24 {
+  font-size: 17px;
+}
+.class_25 {
+  margin-top: 5px;
+}
+.class_26 {
+  background-color: #333;
+}
+.class_27 {
+  border-bottom: 1px solid #282828;
+}
+.class_28 {
+  padding: 12px 20px;
+}
+.class_30 {
+  pointer-events: none;
+  padding: 5px 0px;
+}
+.class_32 {
+  pointer-events: none;
+  width: 100px;
+  padding: 5px 0px;
+}
+.class_33 > * {
+  width: 100px;
+}
+.class_33 {
+  justify-content: space-between;
+  padding: 10px 20px;
+  border-top: 1px solid #282828;
+}
+.class_36 {
+  position: relative;
+}
+.class_37 {
+  z-index: 15;
+}
+.class_38 {
+  width: fit-content;
+  height: fit-content;
+  background-color: #444;
+  border: 1px solid #333;
+  outline: 2px solid #444;
+  border-radius: 3px;
+  box-shadow: 0px 0px 10px 3px #000;
+}
+.class_39 {
+  text-align: right;
+  padding: 10px 25px;
+}
+.class_40 > * {
+  width: 80px;
+}
+.class_40 {
+  border-top: 1px solid #333;
+}
+.class_43 {
+  z-index: 10;
+  background-color: #0008;
+}
