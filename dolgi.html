@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Долговая Книга</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gray: {
+                            850: '#1f2937',
+                            900: '#111827',
+                            950: '#0b0f19',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { 
+            background-color: #0b0f19;
+            color: #e5e7eb; 
+            touch-action: manipulation; 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
+
+        .screen { display: none; animation: fadeIn 0.2s ease-out; }
+        .screen.active { display: flex; flex-direction: column; height: 100vh; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .trans-item { 
+            border-left: 2px solid transparent; 
+            background-color: #1f2937;
+        }
+        .trans-plus { 
+            border-left-color: #ef4444; 
+            background: linear-gradient(90deg, rgba(127, 29, 29, 0.15) 0%, rgba(31, 41, 55, 1) 100%);
+        } 
+        .trans-minus { 
+            border-left-color: #10b981; 
+            background: linear-gradient(90deg, rgba(6, 78, 59, 0.15) 0%, rgba(31, 41, 55, 1) 100%);
+        }
+        
+        input, button { border-radius: 4px !important; }
+
+        /* Стили для графика */
+        .chart-bar {
+            transition: height 0.5s ease;
+            min-height: 1px;
+        }
+        .chart-bar:hover {
+            filter: brightness(1.3);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- ЭКРАН 1: СПИСОК -->
+    <div id="mainScreen" class="screen active max-w-md mx-auto bg-gray-950 h-screen relative border-x border-gray-800">
+        <header class="bg-gray-900 border-b border-gray-800 p-5 sticky top-0 z-10">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h1 class="text-sm text-gray-400 uppercase tracking-widest mb-1">Реестр</h1>
+                    <h2 class="text-xl font-semibold text-white">Список должников</h2>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs text-gray-500 mb-1">Баланс</p>
+                    <p class="text-2xl font-mono text-white tracking-tight" id="globalTotal">0 ₽</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-3 pb-24" id="peopleList"></div>
+
+        <button onclick="showAddPersonModal()" 
+            class="absolute bottom-6 right-6 bg-blue-700 hover:bg-blue-600 text-white w-14 h-14 shadow-lg shadow-black flex items-center justify-center text-2xl active:translate-y-1 transition-all border border-blue-500">
+            <i class="fas fa-plus"></i>
+        </button>
+    </div>
+
+    <!-- ЭКРАН 2: ДЕТАЛИ -->
+    <div id="detailScreen" class="screen max-w-md mx-auto bg-gray-950 h-screen relative border-x border-gray-800">
+        <header class="bg-gray-900 border-b border-gray-800 p-4 flex items-center gap-4 sticky top-0 z-20">
+            <button onclick="goBack()" class="text-gray-400 hover:text-white p-2">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="flex-1">
+                <h2 id="detailName" class="text-lg font-semibold text-gray-100">Имя</h2>
+                <p id="detailTotal" class="text-sm font-mono">0 ₽</p>
+            </div>
+            <button onclick="deleteCurrentPerson()" class="text-gray-600 hover:text-red-500 p-2 transition-colors">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </header>
+
+        <!-- БЛОК ГРАФИКА -->
+        <div class="p-4 bg-gray-900 border-b border-gray-800">
+            <div class="flex justify-between items-end mb-2">
+                <p class="text-xs text-gray-500 uppercase tracking-widest">Возвраты (30 дн)</p>
+                <p id="monthReturnTotal" class="text-xs font-mono text-emerald-400 font-bold">0 ₽</p>
+            </div>
+            <!-- Контейнер столбиков -->
+            <div id="chartContainer" class="h-24 flex items-end justify-between gap-[2px] pt-2 border-b border-gray-800">
+                <!-- JS сгенерирует здесь бары -->
+            </div>
+            <div class="flex justify-between text-[10px] text-gray-600 mt-1 font-mono uppercase">
+                <span>30 дней назад</span>
+                <span>Сегодня</span>
+            </div>
+        </div>
+
+        <div id="transactionList" class="flex-1 overflow-y-auto p-3 pb-48 bg-gray-950"></div>
+
+        <div class="absolute bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 p-4 pb-6 shadow-2xl">
+            <form id="transForm" class="flex flex-col gap-3">
+                <div class="flex gap-2">
+                    <input type="date" id="tDate" class="w-1/3 bg-gray-800 border border-gray-700 text-gray-300 p-2 text-xs focus:border-blue-500 focus:outline-none uppercase">
+                    <input type="number" id="tAmount" placeholder="0.00" required class="flex-1 bg-gray-800 border border-gray-700 text-white p-2 text-lg font-mono focus:border-blue-500 focus:outline-none placeholder-gray-600">
+                </div>
+                <input type="text" id="tComment" placeholder="Примечание..." class="w-full bg-gray-800 border border-gray-700 text-gray-300 p-2 text-sm focus:border-blue-500 focus:outline-none placeholder-gray-600">
+                
+                <div class="grid grid-cols-2 gap-2 mt-1">
+                    <button type="button" onclick="addTransaction('sub')" class="bg-emerald-900/40 border border-emerald-800 text-emerald-400 py-3 text-xs uppercase tracking-wider hover:bg-emerald-900/60 active:bg-emerald-900 transition-colors">
+                        <i class="fas fa-arrow-down mr-1"></i> Вернул
+                    </button>
+                    <button type="button" onclick="addTransaction('add')" class="bg-red-900/40 border border-red-800 text-red-400 py-3 text-xs uppercase tracking-wider hover:bg-red-900/60 active:bg-red-900 transition-colors">
+                        Занял <i class="fas fa-arrow-up ml-1"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модалка -->
+    <div id="addPersonModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 px-4">
+        <div class="bg-gray-900 border border-gray-700 p-6 w-full max-w-xs shadow-2xl">
+            <h3 class="text-gray-200 text-lg font-semibold mb-4 border-b border-gray-800 pb-2">Новый контрагент</h3>
+            <input type="text" id="newPersonName" placeholder="ФИО" class="w-full bg-gray-800 border border-gray-700 text-white p-3 mb-5 focus:border-blue-600 focus:outline-none">
+            <div class="flex justify-end gap-3">
+                <button onclick="closeAddPersonModal()" class="px-4 py-2 text-gray-400 hover:text-white text-sm uppercase tracking-wider">Отмена</button>
+                <button onclick="createPerson()" class="px-5 py-2 bg-blue-700 text-white text-sm uppercase tracking-wider hover:bg-blue-600 shadow-lg">Создать</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let people = JSON.parse(localStorage.getItem('debtApp_v2')) || [];
+        let currentPersonId = null;
+
+        document.getElementById('tDate').valueAsDate = new Date();
+
+        function saveData() {
+            localStorage.setItem('debtApp_v2', JSON.stringify(people));
+            renderMainList();
+            if (currentPersonId !== null) renderDetails();
+        }
+
+        const formatMoney = (sum) => new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(sum);
+        
+        const formatDate = (dateStr) => {
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' });
+        }
+
+        // --- ГЕНЕРАЦИЯ ГРАФИКА ---
+        function renderChart(transactions) {
+            const chartContainer = document.getElementById('chartContainer');
+            const monthTotalEl = document.getElementById('monthReturnTotal');
+            chartContainer.innerHTML = '';
+
+            // 1. Подготовка данных за последние 30 дней
+            const today = new Date();
+            const daysMap = {};
+            let maxVal = 0;
+            let totalReturn = 0;
+
+            // Инициализируем массив последних 30 дней
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(today.getDate() - i);
+                const dateKey = d.toISOString().split('T')[0];
+                daysMap[dateKey] = 0;
+            }
+
+            // Заполняем данными (берем только возвраты, т.е. amount < 0)
+            transactions.forEach(t => {
+                if (t.amount < 0 && daysMap.hasOwnProperty(t.date)) {
+                    const val = Math.abs(t.amount);
+                    daysMap[t.date] += val;
+                    totalReturn += val;
+                }
+            });
+
+            // Находим макс значение для масштаба
+            Object.values(daysMap).forEach(val => {
+                if (val > maxVal) maxVal = val;
+            });
+
+            // 2. Рисуем столбики
+            Object.keys(daysMap).forEach(dateKey => {
+                const val = daysMap[dateKey];
+                const heightPercent = maxVal > 0 ? (val / maxVal) * 100 : 0;
+                
+                const bar = document.createElement('div');
+                // Если значение 0, показываем точку 1px чтобы график не был пустым визуально
+                const displayHeight = heightPercent === 0 ? '1px' : heightPercent + '%';
+                
+                bar.className = `flex-1 chart-bar ${val > 0 ? 'bg-emerald-600' : 'bg-gray-800'}`;
+                bar.style.height = displayHeight;
+                
+                // Простой тултип через title
+                if (val > 0) {
+                    bar.title = `${formatDate(dateKey)}: ${val} ₽`;
+                }
+
+                chartContainer.appendChild(bar);
+            });
+
+            monthTotalEl.innerText = formatMoney(totalReturn);
+        }
+
+        // --- RENDER MAIN ---
+        function renderMainList() {
+            const list = document.getElementById('peopleList');
+            const globalTotalEl = document.getElementById('globalTotal');
+            list.innerHTML = '';
+            let globalSum = 0;
+
+            if (people.length === 0) {
+                list.innerHTML = '<div class="text-center text-gray-600 mt-32 font-mono text-sm border border-dashed border-gray-800 p-10">НЕТ ЗАПИСЕЙ</div>';
+            }
+
+            people.forEach(person => {
+                const total = person.transactions.reduce((acc, t) => acc + t.amount, 0);
+                globalSum += total;
+
+                const div = document.createElement('div');
+                div.className = 'bg-gray-850 p-4 mb-2 flex justify-between items-center border border-gray-800 hover:border-gray-600 transition-colors cursor-pointer group';
+                div.onclick = () => openPerson(person.id);
+                div.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-400 font-bold text-sm group-hover:text-white group-hover:border-gray-500 transition-colors">
+                            ${person.name[0].toUpperCase()}
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-200 text-base">${person.name}</h3>
+                            <p class="text-xs text-gray-500 font-mono">${person.transactions.length} оп.</p>
+                        </div>
+                    </div>
+                    <span class="text-lg font-mono font-medium ${total > 0 ? 'text-red-400' : (total < 0 ? 'text-emerald-400' : 'text-gray-500')}">
+                        ${formatMoney(total)}
+                    </span>
+                `;
+                list.appendChild(div);
+            });
+
+            globalTotalEl.innerText = formatMoney(globalSum);
+            globalTotalEl.className = `text-2xl font-mono tracking-tight ${globalSum > 0 ? 'text-red-400' : 'text-emerald-400'}`;
+        }
+
+        function createPerson() {
+            const nameInput = document.getElementById('newPersonName');
+            const name = nameInput.value.trim();
+            if (!name) return;
+            people.push({ id: Date.now(), name: name, transactions: [] });
+            nameInput.value = '';
+            closeAddPersonModal();
+            saveData();
+        }
+
+        // --- RENDER DETAILS ---
+        function openPerson(id) {
+            currentPersonId = id;
+            document.getElementById('mainScreen').classList.remove('active');
+            document.getElementById('detailScreen').classList.add('active');
+            renderDetails();
+        }
+
+        function goBack() {
+            currentPersonId = null;
+            document.getElementById('detailScreen').classList.remove('active');
+            document.getElementById('mainScreen').classList.add('active');
+            document.getElementById('transForm').reset();
+            document.getElementById('tDate').valueAsDate = new Date();
+        }
+
+        function renderDetails() {
+            const person = people.find(p => p.id === currentPersonId);
+            if (!person) return goBack();
+
+            const total = person.transactions.reduce((acc, t) => acc + t.amount, 0);
+            document.getElementById('detailName').innerText = person.name;
+            const totalEl = document.getElementById('detailTotal');
+            totalEl.innerText = formatMoney(total);
+            totalEl.className = `text-sm font-mono ${total > 0 ? 'text-red-400' : (total < 0 ? 'text-emerald-400' : 'text-gray-500')}`;
+
+            // Рендер Графика
+            renderChart(person.transactions);
+
+            // Рендер Списка
+            const list = document.getElementById('transactionList');
+            list.innerHTML = '';
+            const sortedTrans = [...person.transactions].sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+
+            if (sortedTrans.length === 0) {
+                list.innerHTML = '<div class="text-center text-gray-700 mt-10 text-xs font-mono uppercase tracking-widest">История пуста</div>';
+            }
+
+            sortedTrans.forEach(t => {
+                const isDebt = t.amount > 0;
+                const item = document.createElement('div');
+                item.className = `trans-item p-3 mb-2 flex justify-between items-center ${isDebt ? 'trans-plus' : 'trans-minus'}`;
+                item.innerHTML = `
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs text-gray-500 font-mono border-r border-gray-700 pr-2">${formatDate(t.date)}</span>
+                            <span class="text-sm text-gray-300">${t.comment || (isDebt ? 'Выдача средств' : 'Погашение')}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="font-mono font-medium ${isDebt ? 'text-red-400' : 'text-emerald-400'}">
+                            ${isDebt ? '+' : ''}${t.amount}
+                        </span>
+                        <button onclick="deleteTransaction(${t.id})" class="text-gray-700 hover:text-red-500 text-xs px-1">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function addTransaction(type) {
+            const amountInput = document.getElementById('tAmount');
+            const commentInput = document.getElementById('tComment');
+            const dateInput = document.getElementById('tDate');
+
+            const rawAmount = parseFloat(amountInput.value);
+            if (!rawAmount || isNaN(rawAmount)) return;
+
+            const finalAmount = type === 'add' ? Math.abs(rawAmount) : -Math.abs(rawAmount);
+            
+            people.find(p => p.id === currentPersonId).transactions.push({
+                id: Date.now(),
+                date: dateInput.value || new Date().toISOString().split('T')[0],
+                amount: finalAmount,
+                comment: commentInput.value.trim()
+            });
+
+            amountInput.value = '';
+            commentInput.value = '';
+            saveData();
+            document.getElementById('transactionList').scrollTop = 0;
+        }
+
+        function deleteTransaction(transId) {
+            if(!confirm("Удалить запись?")) return;
+            const person = people.find(p => p.id === currentPersonId);
+            person.transactions = person.transactions.filter(t => t.id !== transId);
+            saveData();
+        }
+
+        function deleteCurrentPerson() {
+            if(!confirm("Удалить карточку контрагента?")) return;
+            people = people.filter(p => p.id !== currentPersonId);
+            currentPersonId = null;
+            saveData();
+            goBack();
+        }
+
+        const modal = document.getElementById('addPersonModal');
+        window.showAddPersonModal = () => { 
+            modal.classList.replace('hidden', 'flex'); 
+            setTimeout(()=>document.getElementById('newPersonName').focus(), 100); 
+        }
+        window.closeAddPersonModal = () => modal.classList.replace('flex', 'hidden');
+
+        renderMainList();
+    </script>
+</body>
+</html>
