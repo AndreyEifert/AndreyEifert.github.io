@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Реестр Долгов</title>
+    <style>
+        /* --- 1. БАЗОВЫЕ СТИЛИ (RESET) --- */
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0a0a0a; /* Глубокий черный */
+            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden; /* Скролл только внутри контейнеров */
+        }
+
+        /* Цветовая палитра */
+        :root {
+            --bg-dark: #0a0a0a;
+            --bg-card: #161616;
+            --border: #333333;
+            --text-main: #e0e0e0;
+            --text-muted: #888888;
+            --accent-blue: #2563eb;
+            --accent-red: #b91c1c;
+            --accent-green: #047857;
+            --danger-bg: rgba(185, 28, 28, 0.15);
+            --success-bg: rgba(4, 120, 87, 0.15);
+        }
+
+        /* Утилиты */
+        .hidden { display: none !important; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .justify-between { justify-content: space-between; }
+        .items-center { align-items: center; }
+        .gap-2 { gap: 8px; }
+        .gap-4 { gap: 16px; }
+        .text-right { text-align: right; }
+        .font-mono { font-family: monospace; letter-spacing: -0.5px; }
+        .uppercase { text-transform: uppercase; letter-spacing: 1px; font-size: 10px; color: var(--text-muted); }
+        
+        /* Типографика */
+        h1, h2, h3, p { margin: 0; }
+        .money { font-family: monospace; font-weight: 600; }
+        .money-pos { color: #f87171; } /* Светло-красный */
+        .money-neg { color: #34d399; } /* Светло-зеленый */
+        .money-neu { color: #888; }
+
+        /* --- 2. КОМПОНЕНТЫ ИНТЕРФЕЙСА --- */
+        
+        /* Экраны */
+        .screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-dark);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 1;
+        }
+
+        /* Шапка */
+        header {
+            background-color: #111;
+            border-bottom: 1px solid var(--border);
+            padding: 16px;
+            flex-shrink: 0;
+        }
+        .header-row { display: flex; justify-content: space-between; align-items: flex-end; }
+        
+        /* Список */
+        .scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            padding-bottom: 100px; /* Отступ для кнопок внизу */
+        }
+
+        /* Карточка человека */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 16px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .card:active { background-color: #222; }
+        .avatar {
+            width: 40px; height: 40px;
+            background: #222;
+            border: 1px solid #444;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold;
+            color: #fff;
+            margin-right: 12px;
+        }
+
+        /* Транзакции */
+        .trans-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg-card);
+            border-left: 3px solid transparent;
+            margin-bottom: 4px;
+        }
+        .t-debt { border-left-color: var(--accent-red); background: linear-gradient(90deg, var(--danger-bg), var(--bg-card) 80%); }
+        .t-return { border-left-color: var(--accent-green); background: linear-gradient(90deg, var(--success-bg), var(--bg-card) 80%); }
+        .date-badge { font-size: 11px; color: var(--text-muted); margin-right: 8px; border-right: 1px solid #444; padding-right: 8px; }
+
+        /* Ввод данных */
+        .input-panel {
+            background-color: #111;
+            border-top: 1px solid var(--border);
+            padding: 16px;
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+        }
+        input {
+            background: #222;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 10px;
+            border-radius: 2px; /* Почти квадратные */
+            font-size: 14px;
+        }
+        input:focus { border-color: var(--accent-blue); }
+
+        /* Кнопки */
+        button {
+            border: none;
+            cursor: pointer;
+            border-radius: 2px;
+            display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.2s;
+        }
+        button:active { opacity: 0.7; }
+        .btn-icon { background: transparent; color: var(--text-muted); padding: 8px; }
+        .btn-icon:hover { color: #fff; }
+        
+        .btn-action {
+            padding: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            flex: 1;
+            border: 1px solid transparent;
+        }
+        .btn-green { background: rgba(4, 120, 87, 0.2); color: #34d399; border-color: #064e3b; }
+        .btn-red { background: rgba(185, 28, 28, 0.2); color: #f87171; border-color: #7f1d1d; }
+
+        /* FAB (Кнопка добавить) */
+        .fab {
+            position: absolute;
+            bottom: 24px; right: 24px;
+            width: 56px; height: 56px;
+            background: var(--accent-blue);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            border: 1px solid #1e40af;
+            border-radius: 4px; /* Квадратная с легким скруглением */
+            font-size: 24px;
+        }
+
+        /* График */
+        .chart-wrapper {
+            background: var(--bg-card);
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .chart-container {
+            height: 80px;
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            margin-top: 8px;
+        }
+        .chart-bar {
+            flex: 1;
+            background: #333;
+            transition: height 0.3s;
+            min-height: 1px;
+        }
+        .chart-bar.active { background: var(--accent-green); }
+
+        /* Модальное окно */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(2px);
+        }
+        .modal-box {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            padding: 24px;
+            width: 85%;
+            max-width: 320px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* SVG Иконки (размеры) */
+        svg { width: 20px; height: 20px; fill: currentColor; }
+        .icon-lg { width: 24px; height: 24px; }
+    </style>
+</head>
+<body>
+
+    <!-- ЭКРАН 1: СПИСОК (ГЛАВНЫЙ) -->
+    <div id="screen-main" class="screen active">
+        <header>
+            <div class="header-row">
+                <div>
+                    <div class="uppercase">Реестр</div>
+                    <h2 style="font-weight: 600; font-size: 20px;">Список должников</h2>
+                </div>
+                <div class="text-right">
+                    <div class="uppercase">Баланс</div>
+                    <div id="global-total" class="money money-neu" style="font-size: 24px;">0 ₽</div>
+                </div>
+            </div>
+        </header>
+
+        <div id="list-container" class="scroll-area">
+            <!-- Список генерируется JS -->
+            <div style="text-align: center; color: #444; margin-top: 50px; font-family: monospace;">
+                НЕТ ДАННЫХ
+            </div>
+        </div>
+
+        <button class="fab" onclick="Modal.show()">
+            <!-- SVG Plus -->
+            <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        </button>
+    </div>
+
+    <!-- ЭКРАН 2: ДЕТАЛИ -->
+    <div id="screen-detail" class="screen">
+        <header>
+            <div class="flex items-center" style="gap: 16px;">
+                <button class="btn-icon" onclick="App.goBack()">
+                    <!-- SVG Arrow Left -->
+                    <svg class="icon-lg" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                </button>
+                <div style="flex: 1;">
+                    <h2 id="detail-name" style="font-size: 18px;">Имя</h2>
+                    <div id="detail-total" class="money" style="font-size: 14px;">0 ₽</div>
+                </div>
+                <button class="btn-icon" onclick="App.deletePerson()">
+                    <!-- SVG Trash -->
+                    <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- График -->
+        <div class="chart-wrapper">
+            <div class="flex justify-between items-end">
+                <span class="uppercase">Возврат (30 дн)</span>
+                <span id="chart-total" class="money money-neg" style="font-size: 12px;">0 ₽</span>
+            </div>
+            <div id="chart-bars" class="chart-container">
+                <!-- Бары генерируются JS -->
+            </div>
+            <div class="flex justify-between uppercase" style="margin-top: 4px; color: #555;">
+                <span>30 дней назад</span>
+                <span>Сегодня</span>
+            </div>
+        </div>
+
+        <!-- История -->
+        <div id="history-container" class="scroll-area" style="padding-bottom: 160px;"></div>
+
+        <!-- Форма -->
+        <div class="input-panel">
+            <div class="flex gap-2" style="margin-bottom: 8px;">
+                <input type="date" id="inp-date" style="width: 35%; color: #aaa; text-transform: uppercase;">
+                <input type="number" id="inp-amount" placeholder="0.00" style="flex: 1; font-family: monospace; font-size: 18px; font-weight: bold;">
+            </div>
+            <input type="text" id="inp-comment" placeholder="Комментарий..." style="width: 100%; margin-bottom: 8px;">
+            
+            <div class="flex gap-2">
+                <button class="btn-action btn-green" onclick="App.addTransaction('sub')">
+                    <!-- Arrow Down -->
+                    <svg style="margin-right: 6px;" viewBox="0 0 24 24"><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/></svg>
+                    Вернул
+                </button>
+                <button class="btn-action btn-red" onclick="App.addTransaction('add')">
+                    Занял
+                    <!-- Arrow Up -->
+                    <svg style="margin-left: 6px;" viewBox="0 0 24 24"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА: Добавить -->
+    <div id="modal-add" class="modal-overlay hidden">
+        <div class="modal-box">
+            <h3 style="margin-bottom: 16px; border-bottom: 1px solid #333; padding-bottom: 8px;">Новый должник</h3>
+            <input type="text" id="new-name" placeholder="ФИО / Название" style="width: 100%; margin-bottom: 16px;">
+            <div class="flex justify-between gap-2">
+                <button onclick="Modal.hide()" style="padding: 10px; background: transparent; color: #888;">ОТМЕНА</button>
+                <button onclick="App.createPerson()" style="padding: 10px 20px; background: var(--accent-blue); color: #fff;">СОЗДАТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Приложение "Консервативный Реестр"
+         * Pure JS, No Libs
+         */
+
+        const StorageKey = 'debt_registry_pure_v1';
+        
+        // --- Utils ---
+        const $ = (id) => document.getElementById(id);
+        const formatMoney = (amount) => {
+            return new Intl.NumberFormat('ru-RU', { 
+                style: 'currency', 
+                currency: 'RUB', 
+                maximumFractionDigits: 0 
+            }).format(amount);
+        };
+        const formatDate = (dateStr) => {
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' });
+        };
+
+        // --- Core Logic ---
+        const App = {
+            data: [],
+            currentId: null,
+
+            init() {
+                this.data = JSON.parse(localStorage.getItem(StorageKey)) || [];
+                $('inp-date').valueAsDate = new Date();
+                this.renderList();
+            },
+
+            save() {
+                localStorage.setItem(StorageKey, JSON.stringify(this.data));
+                this.renderList();
+                if (this.currentId !== null) this.renderDetails();
+            },
+
+            // Navigation
+            openPerson(id) {
+                this.currentId = id;
+                $('screen-main').classList.remove('active');
+                $('screen-detail').classList.add('active');
+                this.renderDetails();
+            },
+
+            goBack() {
+                this.currentId = null;
+                $('screen-detail').classList.remove('active');
+                $('screen-main').classList.add('active');
+                // Reset inputs
+                $('inp-amount').value = '';
+                $('inp-comment').value = '';
+                $('inp-date').valueAsDate = new Date();
+            },
+
+            // CRUD
+            createPerson() {
+                const name = $('new-name').value.trim();
+                if (!name) return;
+                this.data.push({ id: Date.now(), name, transactions: [] });
+                $('new-name').value = '';
+                Modal.hide();
+                this.save();
+            },
+
+            deletePerson() {
+                if (!confirm('Удалить карточку и всю историю?')) return;
+                this.data = this.data.filter(p => p.id !== this.currentId);
+                this.currentId = null;
+                this.save();
+                this.goBack();
+            },
+
+            addTransaction(type) {
+                const amountVal = parseFloat($('inp-amount').value);
+                if (!amountVal || isNaN(amountVal)) return;
+
+                const amount = type === 'add' ? Math.abs(amountVal) : -Math.abs(amountVal);
+                const person = this.data.find(p => p.id === this.currentId);
+                
+                person.transactions.push({
+                    id: Date.now(),
+                    date: $('inp-date').value || new Date().toISOString().split('T')[0],
+                    amount: amount,
+                    comment: $('inp-comment').value.trim()
+                });
+
+                $('inp-amount').value = '';
+                $('inp-comment').value = '';
+                this.save();
+                
+                // Scroll top
+                const container = $('history-container');
+                container.scrollTop = 0;
+            },
+
+            deleteTransaction(tId) {
+                if(!confirm('Удалить запись?')) return;
+                const person = this.data.find(p => p.id === this.currentId);
+                person.transactions = person.transactions.filter(t => t.id !== tId);
+                this.save();
+            },
+
+            // Rendering
+            renderList() {
+                const list = $('list-container');
+                list.innerHTML = '';
+                let globalSum = 0;
+
+                if (this.data.length === 0) {
+                    list.innerHTML = '<div style="text-align: center; color: #444; margin-top: 50px; font-family: monospace;">НЕТ ДАННЫХ</div>';
+                }
+
+                this.data.forEach(p => {
+                    const sum = p.transactions.reduce((acc, t) => acc + t.amount, 0);
+                    globalSum += sum;
+                    
+                    const el = document.createElement('div');
+                    el.className = 'card flex items-center justify-between';
+                    el.onclick = () => this.openPerson(p.id);
+                    
+                    const colorClass = sum > 0 ? 'money-pos' : (sum < 0 ? 'money-neg' : 'money-neu');
+                    
+                    el.innerHTML = `
+                        <div class="flex items-center">
+                            <div class="avatar">${p.name[0].toUpperCase()}</div>
+                            <div>
+                                <div style="font-weight: 500;">${p.name}</div>
+                                <div class="uppercase">${p.transactions.length} оп.</div>
+                            </div>
+                        </div>
+                        <div class="money ${colorClass}" style="font-size: 16px;">${formatMoney(sum)}</div>
+                    `;
+                    list.appendChild(el);
+                });
+
+                const gt = $('global-total');
+                gt.innerText = formatMoney(globalSum);
+                gt.className = `money ${globalSum > 0 ? 'money-pos' : (globalSum < 0 ? 'money-neg' : 'money-neu')}`;
+                gt.style.fontSize = '24px';
+            },
+
+            renderDetails() {
+                const p = this.data.find(item => item.id === this.currentId);
+                if (!p) return;
+
+                const sum = p.transactions.reduce((acc, t) => acc + t.amount, 0);
+                $('detail-name').innerText = p.name;
+                const dt = $('detail-total');
+                dt.innerText = formatMoney(sum);
+                dt.className = `money ${sum > 0 ? 'money-pos' : (sum < 0 ? 'money-neg' : 'money-neu')}`;
+
+                this.renderChart(p.transactions);
+                this.renderHistory(p.transactions);
+            },
+
+            renderHistory(transactions) {
+                const cont = $('history-container');
+                cont.innerHTML = '';
+                
+                // Сортировка: новые сверху
+                const sorted = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+
+                if (sorted.length === 0) {
+                    cont.innerHTML = '<div class="uppercase" style="text-align:center; margin-top: 20px;">История пуста</div>';
+                    return;
+                }
+
+                sorted.forEach(t => {
+                    const isDebt = t.amount > 0;
+                    const row = document.createElement('div');
+                    row.className = `trans-item ${isDebt ? 't-debt' : 't-return'}`;
+                    
+                    // SVG Cross for delete
+                    const crossSvg = `<svg viewBox="0 0 24 24" style="width:16px; height:16px; color:#555;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`;
+
+                    row.innerHTML = `
+                        <div>
+                            <div class="flex items-center" style="margin-bottom: 4px;">
+                                <span class="date-badge font-mono">${formatDate(t.date)}</span>
+                                <span style="font-size: 13px; color: #ccc;">${t.comment || (isDebt ? 'Долг' : 'Возврат')}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="money ${isDebt ? 'money-pos' : 'money-neg'}">${isDebt ? '+' : ''}${t.amount}</span>
+                            <div onclick="event.stopPropagation(); App.deleteTransaction(${t.id})" style="cursor:pointer; padding:4px;">
+                                ${crossSvg}
+                            </div>
+                        </div>
+                    `;
+                    cont.appendChild(row);
+                });
+            },
+
+            renderChart(transactions) {
+                const barCont = $('chart-bars');
+                barCont.innerHTML = '';
+                
+                // Логика 30 дней
+                const daysMap = {};
+                let maxVal = 0;
+                let totalPeriod = 0;
+                
+                for (let i = 29; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    daysMap[d.toISOString().split('T')[0]] = 0;
+                }
+
+                transactions.forEach(t => {
+                    if (t.amount < 0 && daysMap.hasOwnProperty(t.date)) {
+                        const val = Math.abs(t.amount);
+                        daysMap[t.date] += val;
+                        totalPeriod += val;
+                    }
+                });
+
+                Object.values(daysMap).forEach(v => { if (v > maxVal) maxVal = v; });
+
+                $('chart-total').innerText = formatMoney(totalPeriod);
+
+                // Рисуем
+                Object.keys(daysMap).forEach(k => {
+                    const val = daysMap[k];
+                    const h = maxVal > 0 ? (val / maxVal) * 100 : 0;
+                    const bar = document.createElement('div');
+                    bar.className = `chart-bar ${val > 0 ? 'active' : ''}`;
+                    bar.style.height = (h === 0 ? '1px' : h + '%');
+                    barCont.appendChild(bar);
+                });
+            }
+        };
+
+        const Modal = {
+            el: $('modal-add'),
+            show() { 
+                this.el.classList.remove('hidden'); 
+                setTimeout(() => $('new-name').focus(), 100);
+            },
+            hide() { this.el.classList.add('hidden'); }
+        };
+
+        // Start
+        App.init();
+
+    </script>
+</body>
+</html>
