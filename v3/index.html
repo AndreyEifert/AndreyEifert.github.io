@@ -1,0 +1,2121 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Учёт Долгов (Debt Ledger)</title>
+    <meta name="description" content="Автономное веб-приложение для компактного учёта долгов и балансов на чистом HTML, CSS и JavaScript." />
+    <meta property="og:title" content="Учёт Долгов (Debt Ledger)" />
+    <meta property="og:description" content="Автономное веб-приложение для компактного учёта долгов и балансов на чистом HTML, CSS и JavaScript." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <style>
+      /* Reset & Base */
+      *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        -webkit-tap-highlight-color: transparent;
+      }
+      :root {
+        --bg-body: #0f172a;
+        --bg-app: #1e293b;
+        --bg-card: #273549;
+        --bg-card-hover: #2f4058;
+        --bg-input: #162032;
+        --border-color: #334155;
+        --border-focus: #38bdf8;
+        --text-primary: #f8fafc;
+        --text-secondary: #94a3b8;
+        --text-muted: #64748b;
+        --color-plus: #22c55e;
+        --color-plus-bg: rgba(34, 197, 94, 0.12);
+        --color-minus: #ef4444;
+        --color-minus-bg: rgba(239, 68, 68, 0.12);
+        --color-neutral: #94a3b8;
+        --color-neutral-bg: rgba(148, 163, 184, 0.12);
+        --accent: #38bdf8;
+        --accent-hover: #0284c7;
+        --font-base: 13px;
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 14px;
+        --nav-height: 58px;
+        --header-height: 52px;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        font-size: var(--font-base);
+        line-height: 1.4;
+        color: var(--text-primary);
+        background-color: var(--bg-body);
+        display: flex;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      #app-container {
+        width: 100%;
+        max-width: 520px;
+        min-height: 100vh;
+        background-color: var(--bg-app);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+      }
+
+      /* Typography & Utility */
+      h1, h2, h3 {
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* App Header */
+      .app-header {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: rgba(30, 41, 59, 0.95);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border-color);
+        padding: 10px 14px;
+      }
+      .header-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 34px;
+      }
+      .header-title-box {
+        display: flex;
+        flex-direction: column;
+      }
+      .header-subtitle {
+        font-size: 11px;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+      }
+      .header-title {
+        font-size: 16px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .balance-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: var(--radius-sm);
+        font-weight: 700;
+        font-size: 14px;
+        letter-spacing: -0.01em;
+      }
+      .balance-pill.plus {
+        color: var(--color-plus);
+        background-color: var(--color-plus-bg);
+      }
+      .balance-pill.minus {
+        color: var(--color-minus);
+        background-color: var(--color-minus-bg);
+      }
+      .balance-pill.neutral {
+        color: var(--color-neutral);
+        background-color: var(--color-neutral-bg);
+      }
+      .header-stats {
+        display: flex;
+        gap: 12px;
+        font-size: 11px;
+        margin-top: 4px;
+        color: var(--text-secondary);
+      }
+      .header-stats span strong {
+        font-weight: 600;
+      }
+      .header-stats .stat-plus {
+        color: var(--color-plus);
+      }
+      .header-stats .stat-minus {
+        color: var(--color-minus);
+      }
+
+      /* Screen Views */
+      .screen-view {
+        flex: 1;
+        display: none;
+        flex-direction: column;
+        padding-bottom: calc(var(--nav-height) + 16px);
+      }
+      .screen-view.active {
+        display: flex;
+      }
+
+      /* Search & Controls */
+      .filter-toolbar {
+        padding: 8px 12px;
+        background: var(--bg-card);
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .search-input-wrap {
+        position: relative;
+        width: 100%;
+      }
+      .search-input-wrap input {
+        width: 100%;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        padding: 7px 10px 7px 28px;
+        color: var(--text-primary);
+        font-size: 12px;
+        outline: none;
+      }
+      .search-input-wrap input:focus {
+        border-color: var(--border-focus);
+      }
+      .search-icon {
+        position: absolute;
+        left: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 12px;
+        color: var(--text-muted);
+        pointer-events: none;
+      }
+
+      /* Date Filter Toolbar */
+      .date-filter-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        flex-wrap: wrap;
+      }
+      .date-filter-label {
+        color: var(--text-muted);
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .date-input {
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        font-size: 12px;
+        padding: 5px 7px;
+        border-radius: var(--radius-sm);
+        outline: none;
+        color-scheme: dark;
+      }
+      .date-input:focus {
+        border-color: var(--border-focus);
+      }
+      .btn-compact {
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        padding: 5px 8px;
+        font-size: 11px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .btn-compact:hover {
+        background: var(--bg-card-hover);
+        color: var(--text-primary);
+      }
+      .filter-active-summary {
+        font-size: 11px;
+        color: var(--accent);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      /* Lists */
+      .item-list {
+        list-style: none;
+        padding: 8px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .contact-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        transition: transform 0.1s ease, background 0.15s ease;
+      }
+      .contact-card:hover {
+        background: var(--bg-card-hover);
+      }
+      .contact-card:active {
+        transform: scale(0.99);
+      }
+      .contact-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+        flex: 1;
+        padding-right: 10px;
+      }
+      .contact-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+      .contact-sub {
+        font-size: 11px;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .contact-amount-box {
+        text-align: right;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+        flex-shrink: 0;
+      }
+      .amount-val {
+        font-weight: 700;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        letter-spacing: -0.01em;
+      }
+      .amount-val.plus {
+        color: var(--color-plus);
+      }
+      .amount-val.minus {
+        color: var(--color-minus);
+      }
+      .amount-val.neutral {
+        color: var(--color-neutral);
+      }
+      .amount-status {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      .amount-status.plus {
+        color: var(--color-plus);
+      }
+      .amount-status.minus {
+        color: var(--color-minus);
+      }
+      .amount-status.neutral {
+        color: var(--text-muted);
+      }
+
+      /* Operation Items */
+      .operation-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .operation-main {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+        flex: 1;
+      }
+      .operation-comment {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-primary);
+      }
+      .operation-meta {
+        font-size: 11px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .operation-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .btn-del-op {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 4px 6px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        line-height: 1;
+        transition: all 0.15s ease;
+      }
+      .btn-del-op:hover {
+        color: var(--color-minus);
+        background: var(--color-minus-bg);
+      }
+
+      /* Empty State */
+      .empty-state {
+        padding: 40px 20px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: var(--text-muted);
+      }
+      .empty-state-icon {
+        font-size: 32px;
+        opacity: 0.6;
+        margin-bottom: 4px;
+      }
+      .empty-state-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-secondary);
+      }
+      .empty-state-text {
+        font-size: 12px;
+        max-width: 280px;
+        line-height: 1.4;
+      }
+
+      /* Bottom Navigation (Fixed) */
+      .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 520px;
+        height: var(--nav-height);
+        background: rgba(22, 32, 50, 0.96);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 14px;
+        z-index: 30;
+      }
+      .btn-nav-primary {
+        background: #0284c7;
+        color: #ffffff;
+        border: none;
+        padding: 9px 16px;
+        border-radius: var(--radius-md);
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+      .btn-nav-primary:hover {
+        background: #0369a1;
+      }
+      .btn-nav-primary:active {
+        transform: scale(0.98);
+      }
+      .btn-nav-secondary {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        padding: 9px 14px;
+        border-radius: var(--radius-md);
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .btn-nav-secondary:hover {
+        background: var(--bg-card-hover);
+      }
+      .btn-nav-icon {
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        width: 38px;
+        height: 38px;
+        border-radius: var(--radius-md);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .btn-nav-icon:hover {
+        color: var(--text-primary);
+        background: var(--bg-card-hover);
+      }
+
+      /* Modal / Dialog (Bottom sheet on mobile, dialog on desktop) */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(3px);
+        z-index: 100;
+        display: none;
+        align-items: flex-end;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+      .modal-backdrop.open {
+        display: flex;
+        opacity: 1;
+      }
+      .modal-backdrop.modal-confirm-backdrop {
+        z-index: 150;
+      }
+      .modal-dialog {
+        background: #1e293b;
+        width: 100%;
+        max-width: 520px;
+        border-top-left-radius: var(--radius-lg);
+        border-top-right-radius: var(--radius-lg);
+        border: 1px solid var(--border-color);
+        border-bottom: none;
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+        max-height: 90vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        transform: translateY(100%);
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .modal-backdrop.open .modal-dialog {
+        transform: translateY(0);
+      }
+      @media (min-width: 540px) {
+        .modal-backdrop {
+          align-items: center;
+          padding: 20px;
+        }
+        .modal-dialog {
+          border-radius: var(--radius-lg);
+          border-bottom: 1px solid var(--border-color);
+          max-height: 85vh;
+          transform: scale(0.95);
+        }
+        .modal-backdrop.open .modal-dialog {
+          transform: scale(1);
+        }
+      }
+
+      .modal-dialog.modal-dialog-sm {
+        max-width: 380px;
+        margin: auto;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-color);
+      }
+
+      .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        background: #1e293b;
+        z-index: 5;
+      }
+      .modal-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+      .btn-modal-close {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        font-size: 18px;
+        width: 30px;
+        height: 30px;
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        line-height: 1;
+      }
+      .btn-modal-close:hover {
+        color: var(--text-primary);
+        background: var(--bg-card);
+      }
+      .modal-body {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .form-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+      }
+      .form-label .optional {
+        font-size: 11px;
+        font-weight: normal;
+        color: var(--text-muted);
+      }
+      .form-input {
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        padding: 8px 10px;
+        color: var(--text-primary);
+        font-size: 13px;
+        outline: none;
+        font-family: inherit;
+        color-scheme: dark;
+      }
+      .form-input:focus {
+        border-color: var(--border-focus);
+      }
+      .amount-feedback-badge {
+        font-size: 11px;
+        padding: 5px 8px;
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 3px;
+        font-weight: 600;
+      }
+      .amount-feedback-badge.plus {
+        background: var(--color-plus-bg);
+        color: var(--color-plus);
+      }
+      .amount-feedback-badge.minus {
+        background: var(--color-minus-bg);
+        color: var(--color-minus);
+      }
+      .amount-feedback-badge.neutral {
+        background: var(--bg-card);
+        color: var(--text-muted);
+      }
+
+      .modal-footer {
+        padding: 12px 16px;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        background: #1e293b;
+        position: sticky;
+        bottom: 0;
+      }
+      .btn-submit {
+        background: #0284c7;
+        color: #ffffff;
+        border: none;
+        padding: 9px 16px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+      .btn-submit:hover {
+        background: #0369a1;
+      }
+      .btn-cancel {
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        padding: 9px 14px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .btn-cancel:hover {
+        color: var(--text-primary);
+        background: var(--bg-card-hover);
+      }
+
+      /* Settings Modal Specific */
+      .settings-section {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .settings-section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .settings-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .btn-setting-action {
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 9px 10px;
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 4px;
+        transition: all 0.15s ease;
+      }
+      .btn-setting-action:hover {
+        border-color: var(--accent);
+        background: var(--bg-card-hover);
+      }
+      .btn-setting-action.danger {
+        border-color: rgba(239, 68, 68, 0.4);
+        color: #fca5a5;
+      }
+      .btn-setting-action.danger:hover {
+        background: var(--color-minus-bg);
+        border-color: var(--color-minus);
+      }
+      .btn-setting-action span.icon {
+        font-size: 16px;
+      }
+      .file-hidden-input {
+        display: none;
+      }
+
+      /* Notification toast */
+      .toast {
+        position: fixed;
+        top: 16px;
+        left: 50%;
+        transform: translateX(-50%) translateY(-100px);
+        background: #334155;
+        color: #f8fafc;
+        padding: 8px 16px;
+        border-radius: var(--radius-md);
+        font-size: 12px;
+        font-weight: 500;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+        border: 1px solid var(--border-color);
+        z-index: 200;
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        pointer-events: none;
+      }
+      .toast.visible {
+        transform: translateX(-50%) translateY(0);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app-container">
+      <!-- Top Sticky Header -->
+      <header class="app-header">
+        <div class="header-content">
+          <div class="header-title-box" id="header-title-container">
+            <span class="header-subtitle" id="header-subtitle">Учёт долгов</span>
+            <div class="header-title" id="header-main-title">
+              <span>Общий баланс:</span>
+              <span id="global-balance-badge" class="balance-pill neutral">0 ₽</span>
+            </div>
+          </div>
+          <!-- Right Header Action (e.g. Delete person button when in person profile) -->
+          <div id="header-action-container"></div>
+        </div>
+        <!-- Stats overview on main screen -->
+        <div class="header-stats" id="global-stats-bar">
+          <span>Вам должны: <strong id="stat-owed-to-me" class="stat-plus">0 ₽</strong></span>
+          <span>•</span>
+          <span>Вы должны: <strong id="stat-i-owe" class="stat-minus">0 ₽</strong></span>
+        </div>
+      </header>
+
+      <!-- View 1: Contacts List Screen -->
+      <main id="view-contacts" class="screen-view active">
+        <!-- Search contacts -->
+        <div class="filter-toolbar">
+          <div class="search-input-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="contact-search-input" placeholder="Поиск по имени или заметкам..." autocomplete="off" />
+          </div>
+        </div>
+
+        <ul class="item-list" id="contacts-list">
+          <!-- Dynamically populated -->
+        </ul>
+
+        <div class="empty-state" id="contacts-empty" style="display: none;">
+          <div class="empty-state-icon">👥</div>
+          <div class="empty-state-title">Нет записей</div>
+          <div class="empty-state-text">Добавьте человека по кнопке «+ Добавить человека» внизу, чтобы начать учёт долгов.</div>
+        </div>
+      </main>
+
+      <!-- View 2: Person Detail / Operations Screen -->
+      <main id="view-person" class="screen-view">
+        <!-- Date filter toolbar (strict timestamp filter) -->
+        <div class="filter-toolbar">
+          <div class="date-filter-row">
+            <span class="date-filter-label">С:</span>
+            <input type="date" id="filter-date-from" class="date-input" />
+            <span class="date-filter-label">По:</span>
+            <input type="date" id="filter-date-to" class="date-input" />
+            <button type="button" id="btn-reset-filter" class="btn-compact">✕ Сброс</button>
+          </div>
+          <div id="filter-stats-text" class="filter-active-summary" style="display: none;"></div>
+        </div>
+
+        <ul class="item-list" id="operations-list">
+          <!-- Dynamically populated -->
+        </ul>
+
+        <div class="empty-state" id="operations-empty" style="display: none;">
+          <div class="empty-state-icon">📝</div>
+          <div class="empty-state-title">Нет операций</div>
+          <div class="empty-state-text">У этого человека пока нет операций за выбранный период. Нажмите «+ Новая операция» внизу.</div>
+        </div>
+      </main>
+
+      <!-- Bottom Navigation (Fixed) -->
+      <nav class="bottom-nav">
+        <!-- Navigation for Contacts view -->
+        <div id="nav-contacts-view" style="display: flex; width: 100%; justify-content: space-between; align-items: center;">
+          <button type="button" id="btn-open-add-person" class="btn-nav-primary">
+            <span>+</span> Добавить человека
+          </button>
+          <button type="button" id="btn-open-settings" class="btn-nav-icon" title="Настройки и бэкап" aria-label="Настройки">
+            ⚙️
+          </button>
+        </div>
+
+        <!-- Navigation for Person view -->
+        <div id="nav-person-view" style="display: none; width: 100%; justify-content: space-between; align-items: center;">
+          <button type="button" id="btn-back-to-contacts" class="btn-nav-secondary">
+            ← Назад
+          </button>
+          <button type="button" id="btn-open-add-operation" class="btn-nav-primary">
+            <span>+</span> Новая операция
+          </button>
+        </div>
+      </nav>
+
+      <!-- MODAL: Add Person -->
+      <div class="modal-backdrop" id="modal-add-person">
+        <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-add-person-title">
+          <div class="modal-header">
+            <h2 class="modal-title" id="modal-add-person-title">Новый человек</h2>
+            <button type="button" class="btn-modal-close" data-close-modal="modal-add-person" aria-label="Закрыть">✕</button>
+          </div>
+          <form id="form-add-person">
+            <div class="modal-body">
+              <div class="form-group">
+                <label class="form-label" for="input-person-name">Имя или название *</label>
+                <input type="text" id="input-person-name" class="form-input" placeholder="Например: Иван Иванов или Аренда" required autocomplete="off" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="input-person-amount">
+                  Стартовая сумма <span class="optional">(необязательно)</span>
+                </label>
+                <input type="number" step="any" id="input-person-amount" class="form-input" placeholder="0 или 1500 или -500" />
+                <div id="person-amount-feedback" class="amount-feedback-badge neutral">
+                  <span>ℹ️</span> 0 ₽ (без начального долга)
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="input-person-comment">
+                  Комментарий <span class="optional">(необязательно)</span>
+                </label>
+                <input type="text" id="input-person-comment" class="form-input" placeholder="По умолчанию: Стартовый баланс" autocomplete="off" />
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn-cancel" data-close-modal="modal-add-person">Отмена</button>
+              <button type="submit" class="btn-submit">Сохранить</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- MODAL: Add Operation -->
+      <div class="modal-backdrop" id="modal-add-operation">
+        <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-add-op-title">
+          <div class="modal-header">
+            <h2 class="modal-title" id="modal-add-op-title">Новая операция</h2>
+            <button type="button" class="btn-modal-close" data-close-modal="modal-add-operation" aria-label="Закрыть">✕</button>
+          </div>
+          <form id="form-add-operation">
+            <div class="modal-body">
+              <div class="form-group">
+                <label class="form-label" for="input-op-amount">Сумма *</label>
+                <input type="number" step="any" id="input-op-amount" class="form-input" placeholder="Например: 1000 или -500" required />
+                <div id="op-amount-feedback" class="amount-feedback-badge neutral">
+                  <span>ℹ️</span> Знак числа определяет долг: + вам должны, - вы должны
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="input-op-date">Дата *</label>
+                <input type="date" id="input-op-date" class="form-input" required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="input-op-comment">
+                  Комментарий <span class="optional">(необязательно)</span>
+                </label>
+                <input type="text" id="input-op-comment" class="form-input" placeholder="По умолчанию: Увеличение/Уменьшение баланса" autocomplete="off" />
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn-cancel" data-close-modal="modal-add-operation">Отмена</button>
+              <button type="submit" class="btn-submit">Записать</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- MODAL: Settings & Backup -->
+      <div class="modal-backdrop" id="modal-settings">
+        <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-settings-title">
+          <div class="modal-header">
+            <h2 class="modal-title" id="modal-settings-title">⚙️ Настройки и Резервные копии</h2>
+            <button type="button" class="btn-modal-close" data-close-modal="modal-settings" aria-label="Закрыть">✕</button>
+          </div>
+          <div class="modal-body">
+            <!-- Backup JSON -->
+            <div class="settings-section">
+              <div class="settings-section-title">📦 Полный бэкап (JSON)</div>
+              <div class="settings-grid">
+                <button type="button" id="btn-export-json" class="btn-setting-action">
+                  <span class="icon">💾</span>
+                  <span>Сохранить в JSON</span>
+                </button>
+                <button type="button" id="btn-trigger-import-json" class="btn-setting-action">
+                  <span class="icon">📂</span>
+                  <span>Загрузить из JSON</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Export / Import CSV (Excel friendly) -->
+            <div class="settings-section">
+              <div class="settings-section-title">📊 Таблицы Excel (CSV)</div>
+              <div class="settings-grid">
+                <button type="button" id="btn-export-csv" class="btn-setting-action">
+                  <span class="icon">📑</span>
+                  <span>Экспорт в CSV</span>
+                </button>
+                <button type="button" id="btn-trigger-import-csv" class="btn-setting-action">
+                  <span class="icon">📥</span>
+                  <span>Импорт из CSV</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="settings-section">
+              <div class="settings-section-title" style="color: #f87171;">⚠️ Управление данными</div>
+              <div class="settings-grid">
+                <button type="button" id="btn-load-demo" class="btn-setting-action">
+                  <span class="icon">✨</span>
+                  <span>Демо-примеры</span>
+                </button>
+                <button type="button" id="btn-clear-all" class="btn-setting-action danger">
+                  <span class="icon">🗑️</span>
+                  <span>Очистить всё</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" data-close-modal="modal-settings">Закрыть</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL: Custom Confirm Dialog (Never blocked by iframe sandboxes, runs everywhere) -->
+      <div class="modal-backdrop modal-confirm-backdrop" id="modal-confirm">
+        <div class="modal-dialog modal-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+          <div class="modal-header">
+            <h2 class="modal-title" id="confirm-modal-title">Подтверждение</h2>
+            <button type="button" class="btn-modal-close" id="btn-confirm-close" aria-label="Закрыть">✕</button>
+          </div>
+          <div class="modal-body" style="padding: 16px;">
+            <p id="confirm-modal-message" style="font-size: 13px; line-height: 1.5; color: var(--text-primary);"></p>
+          </div>
+          <div class="modal-footer" style="padding: 10px 16px;">
+            <button type="button" class="btn-cancel" id="btn-confirm-cancel">Отмена</button>
+            <button type="button" class="btn-submit" id="btn-confirm-ok">Подтвердить</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hidden file inputs for import (No inline listeners) -->
+      <input type="file" id="file-input-json" class="file-hidden-input" accept=".json,application/json" />
+      <input type="file" id="file-input-csv" class="file-hidden-input" accept=".csv,text/csv" />
+
+      <!-- Notification Toast -->
+      <div id="toast" class="toast">Готово</div>
+    </div>
+
+    <!-- PURE JAVASCRIPT: NO modules (type="module" is NOT used), runs standalone file:// protocol -->
+    <script>
+      (function() {
+        'use strict';
+
+        var STORAGE_KEY = 'debt_ledger_storage_v1';
+        var STORAGE_CLEARED_FLAG = 'debt_ledger_cleared_flag';
+
+        // State structure
+        // state = { people: [ { id, name, createdAt, operations: [ { id, timestamp, date, amount, comment } ] } ] }
+        var state = {
+          people: []
+        };
+
+        var currentPersonId = null;
+        var dateFilter = {
+          from: '',
+          to: ''
+        };
+        var searchQuery = '';
+        var activeConfirmCallback = null;
+
+        // --- Helper: HTML Sanitization against XSS ---
+        function escapeHtml(str) {
+          if (str === null || str === undefined) return '';
+          return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+        }
+
+        // Helper: Number formatter
+        function formatMoney(amount) {
+          var val = Number(amount) || 0;
+          var parts = Math.abs(val).toFixed(2).split('.');
+          var integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+          var decimalPart = parts[1];
+          var display = decimalPart === '00' ? integerPart : integerPart + '.' + decimalPart;
+          var sign = val > 0 ? '+' : (val < 0 ? '-' : '');
+          return sign + display + ' ₽';
+        }
+
+        function formatLocalDate(isoDateStr) {
+          if (!isoDateStr) return '';
+          var parts = isoDateStr.split('-');
+          if (parts.length === 3) {
+            return parts[2] + '.' + parts[1] + '.' + parts[0];
+          }
+          return isoDateStr;
+        }
+
+        function getTodayIso() {
+          var d = new Date();
+          var month = '' + (d.getMonth() + 1);
+          var day = '' + d.getDate();
+          var year = d.getFullYear();
+          if (month.length < 2) month = '0' + month;
+          if (day.length < 2) day = '0' + day;
+          return [year, month, day].join('-');
+        }
+
+        function generateId(prefix) {
+          return (prefix || 'id') + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+        }
+
+        // --- Toast Notification ---
+        var toastTimer = null;
+        function showToast(message) {
+          var el = document.getElementById('toast');
+          if (!el) return;
+          el.textContent = message;
+          el.classList.add('visible');
+          if (toastTimer) clearTimeout(toastTimer);
+          toastTimer = setTimeout(function() {
+            el.classList.remove('visible');
+          }, 2400);
+        }
+
+        // --- In-App Confirm Dialog (Replaces blocked window.confirm in iframes) ---
+        function requestConfirmation(options, onConfirmed) {
+          var modal = document.getElementById('modal-confirm');
+          var titleEl = document.getElementById('confirm-modal-title');
+          var msgEl = document.getElementById('confirm-modal-message');
+          var okBtn = document.getElementById('btn-confirm-ok');
+
+          if (!modal || !okBtn) {
+            // Fallback
+            try {
+              if (window.confirm(options.message || 'Подтвердить действие?')) {
+                onConfirmed();
+              }
+            } catch (e) {
+              onConfirmed();
+            }
+            return;
+          }
+
+          titleEl.textContent = options.title || 'Подтверждение';
+          msgEl.textContent = options.message || 'Вы уверены?';
+          okBtn.textContent = options.okText || 'Подтвердить';
+
+          if (options.isDanger) {
+            okBtn.style.backgroundColor = '#ef4444';
+            okBtn.style.color = '#ffffff';
+          } else {
+            okBtn.style.backgroundColor = '#0284c7';
+            okBtn.style.color = '#ffffff';
+          }
+
+          activeConfirmCallback = onConfirmed;
+          openModal('modal-confirm');
+        }
+
+        // --- Storage Management ---
+        function loadFromStorage() {
+          try {
+            var raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+              var parsed = JSON.parse(raw);
+              if (parsed && Array.isArray(parsed.people)) {
+                state = parsed;
+                return;
+              }
+            }
+          } catch (e) {
+            console.error('Failed to load state from localStorage', e);
+          }
+          state = { people: [] };
+        }
+
+        function saveToStorage() {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          } catch (e) {
+            console.error('Failed to save state to localStorage', e);
+          }
+        }
+
+        // --- Calculations ---
+        function calculatePersonBalance(person) {
+          if (!person || !Array.isArray(person.operations)) return 0;
+          return person.operations.reduce(function(acc, op) {
+            return acc + (Number(op.amount) || 0);
+          }, 0);
+        }
+
+        function calculateGlobalTotals() {
+          var totalBalance = 0;
+          var totalOwedToMe = 0;
+          var totalIOwe = 0;
+
+          state.people.forEach(function(person) {
+            var pBal = calculatePersonBalance(person);
+            totalBalance += pBal;
+            if (pBal > 0) {
+              totalOwedToMe += pBal;
+            } else if (pBal < 0) {
+              totalIOwe += Math.abs(pBal);
+            }
+          });
+
+          return {
+            total: totalBalance,
+            owedToMe: totalOwedToMe,
+            iOwe: totalIOwe
+          };
+        }
+
+        // --- Modal Control ---
+        function openModal(modalId, focusInputId) {
+          var modal = document.getElementById(modalId);
+          if (!modal) return;
+          modal.classList.add('open');
+          if (focusInputId) {
+            setTimeout(function() {
+              var input = document.getElementById(focusInputId);
+              if (input) {
+                input.focus();
+                if (input.select) input.select();
+              }
+            }, 50);
+          }
+        }
+
+        function closeModal(modalId) {
+          var modal = document.getElementById(modalId);
+          if (!modal) return;
+          modal.classList.remove('open');
+        }
+
+        function closeAllModals() {
+          var openModals = document.querySelectorAll('.modal-backdrop.open');
+          openModals.forEach(function(m) {
+            m.classList.remove('open');
+          });
+        }
+
+        // --- View Switching ---
+        function switchToContactsView() {
+          currentPersonId = null;
+          // Clear date filter when backing out
+          dateFilter.from = '';
+          dateFilter.to = '';
+          var filterFrom = document.getElementById('filter-date-from');
+          var filterTo = document.getElementById('filter-date-to');
+          if (filterFrom) filterFrom.value = '';
+          if (filterTo) filterTo.value = '';
+
+          document.getElementById('view-contacts').classList.add('active');
+          document.getElementById('view-person').classList.remove('active');
+
+          document.getElementById('nav-contacts-view').style.display = 'flex';
+          document.getElementById('nav-person-view').style.display = 'none';
+
+          renderHeader();
+          renderContactsList();
+        }
+
+        function switchToPersonView(personId) {
+          currentPersonId = personId;
+          document.getElementById('view-contacts').classList.remove('active');
+          document.getElementById('view-person').classList.add('active');
+
+          document.getElementById('nav-contacts-view').style.display = 'none';
+          document.getElementById('nav-person-view').style.display = 'flex';
+
+          renderHeader();
+          renderOperationsList();
+        }
+
+        // --- Header Rendering ---
+        function renderHeader() {
+          var subtitleEl = document.getElementById('header-subtitle');
+          var mainTitleEl = document.getElementById('header-main-title');
+          var globalStatsBar = document.getElementById('global-stats-bar');
+          var actionContainer = document.getElementById('header-action-container');
+
+          if (currentPersonId === null) {
+            // Contacts overview
+            subtitleEl.textContent = 'Учёт долгов';
+            var totals = calculateGlobalTotals();
+
+            var pillClass = totals.total > 0 ? 'plus' : (totals.total < 0 ? 'minus' : 'neutral');
+            mainTitleEl.innerHTML = '<span>Общий баланс:</span> ' +
+              '<span class="balance-pill ' + pillClass + '">' + formatMoney(totals.total) + '</span>';
+
+            document.getElementById('stat-owed-to-me').textContent = formatMoney(totals.owedToMe).replace('+', '');
+            document.getElementById('stat-i-owe').textContent = formatMoney(totals.iOwe).replace('+', '');
+            globalStatsBar.style.display = 'flex';
+            actionContainer.innerHTML = '';
+          } else {
+            // Person Operations view
+            var person = state.people.find(function(p) { return p.id === currentPersonId; });
+            if (!person) {
+              switchToContactsView();
+              return;
+            }
+
+            var pBal = calculatePersonBalance(person);
+            var pClass = pBal > 0 ? 'plus' : (pBal < 0 ? 'minus' : 'neutral');
+
+            subtitleEl.textContent = 'История долга';
+            mainTitleEl.innerHTML = '<span class="truncate" style="max-width: 170px;">' + escapeHtml(person.name) + ':</span> ' +
+              '<span class="balance-pill ' + pClass + '">' + formatMoney(pBal) + '</span>';
+
+            globalStatsBar.style.display = 'none';
+
+            // Provide delete person action in header
+            actionContainer.innerHTML = '<button type="button" id="btn-delete-person-header" class="btn-compact" style="color: #f87171;" title="Удалить человека">Удалить</button>';
+            var delBtn = document.getElementById('btn-delete-person-header');
+            if (delBtn) {
+              delBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                handleDeletePerson(person.id, person.name);
+              });
+            }
+          }
+        }
+
+        // --- Render Contacts List ---
+        function renderContactsList() {
+          var listEl = document.getElementById('contacts-list');
+          var emptyEl = document.getElementById('contacts-empty');
+          listEl.innerHTML = '';
+
+          var filtered = state.people.filter(function(person) {
+            if (!searchQuery) return true;
+            var q = searchQuery.toLowerCase();
+            if (person.name.toLowerCase().indexOf(q) !== -1) return true;
+            return person.operations.some(function(op) {
+              return (op.comment || '').toLowerCase().indexOf(q) !== -1;
+            });
+          });
+
+          if (filtered.length === 0) {
+            emptyEl.style.display = 'flex';
+            return;
+          }
+          emptyEl.style.display = 'none';
+
+          filtered.forEach(function(person) {
+            var balance = calculatePersonBalance(person);
+            var valClass = balance > 0 ? 'plus' : (balance < 0 ? 'minus' : 'neutral');
+            var icon = balance > 0 ? '↓ ' : (balance < 0 ? '↑ ' : '');
+            var statusText = balance > 0 ? 'Вам должны' : (balance < 0 ? 'Вы должны' : 'Расчёт закрыт');
+
+            var lastOp = person.operations[person.operations.length - 1];
+            var lastOpText = lastOp ? (formatLocalDate(lastOp.date) + ' • ' + escapeHtml(lastOp.comment)) : 'Нет операций';
+
+            var li = document.createElement('li');
+            li.className = 'contact-card';
+            li.setAttribute('data-person-id', person.id);
+            li.innerHTML = 
+              '<div class="contact-info">' +
+                '<span class="contact-name truncate">' + escapeHtml(person.name) + '</span>' +
+                '<span class="contact-sub truncate">' + lastOpText + '</span>' +
+              '</div>' +
+              '<div class="contact-amount-box">' +
+                '<span class="amount-val ' + valClass + '">' + icon + formatMoney(balance) + '</span>' +
+                '<span class="amount-status ' + valClass + '">' + statusText + '</span>' +
+              '</div>';
+
+            listEl.appendChild(li);
+          });
+        }
+
+        // --- Render Operations List with Unbreakable Timestamp Date Filter ---
+        function renderOperationsList() {
+          var person = state.people.find(function(p) { return p.id === currentPersonId; });
+          if (!person) return;
+
+          var listEl = document.getElementById('operations-list');
+          var emptyEl = document.getElementById('operations-empty');
+          var filterStatsEl = document.getElementById('filter-stats-text');
+          listEl.innerHTML = '';
+
+          // Calculate timestamp boundaries strictly from filter inputs
+          var fromTs = dateFilter.from ? new Date(dateFilter.from + 'T00:00:00').getTime() : -Infinity;
+          var toTs = dateFilter.to ? new Date(dateFilter.to + 'T23:59:59.999').getTime() : Infinity;
+
+          var filteredOps = person.operations.filter(function(op) {
+            // STRICT timestamp comparison to prevent any localized date string parsing bugs
+            var ts = Number(op.timestamp);
+            return ts >= fromTs && ts <= toTs;
+          });
+
+          // Sort operations chronologically descending (newest first)
+          filteredOps.sort(function(a, b) {
+            return Number(b.timestamp) - Number(a.timestamp);
+          });
+
+          // Show filter summary if date filter is active
+          if (dateFilter.from || dateFilter.to) {
+            var periodSum = filteredOps.reduce(function(acc, op) { return acc + Number(op.amount); }, 0);
+            var sumClass = periodSum > 0 ? 'var(--color-plus)' : (periodSum < 0 ? 'var(--color-minus)' : 'var(--text-muted)');
+            filterStatsEl.style.display = 'flex';
+            filterStatsEl.innerHTML = 'За период: <strong style="color: ' + sumClass + ';">' + formatMoney(periodSum) + '</strong> (' + filteredOps.length + ' оп.)';
+          } else {
+            filterStatsEl.style.display = 'none';
+          }
+
+          if (filteredOps.length === 0) {
+            emptyEl.style.display = 'flex';
+            return;
+          }
+          emptyEl.style.display = 'none';
+
+          filteredOps.forEach(function(op) {
+            var amt = Number(op.amount) || 0;
+            var valClass = amt > 0 ? 'plus' : (amt < 0 ? 'minus' : 'neutral');
+            var icon = amt > 0 ? '↓ ' : (amt < 0 ? '↑ ' : '');
+
+            var li = document.createElement('li');
+            li.className = 'operation-card';
+            li.innerHTML =
+              '<div class="operation-main">' +
+                '<span class="operation-comment truncate">' + escapeHtml(op.comment) + '</span>' +
+                '<div class="operation-meta">' +
+                  '<span>' + formatLocalDate(op.date) + '</span>' +
+                '</div>' +
+              '</div>' +
+              '<div class="operation-right">' +
+                '<span class="amount-val ' + valClass + '">' + icon + formatMoney(amt) + '</span>' +
+                '<button type="button" class="btn-del-op" data-op-id="' + op.id + '" title="Удалить операцию" aria-label="Удалить операцию">🗑️</button>' +
+              '</div>';
+
+            listEl.appendChild(li);
+          });
+        }
+
+        // --- Deletion Handlers with In-App Confirm Dialog ---
+        function handleDeletePerson(personId, personName) {
+          requestConfirmation({
+            title: 'Удалить контакт',
+            message: 'Вы уверены, что хотите удалить «' + personName + '» и всю историю операций? Это действие нельзя отменить.',
+            okText: 'Да, удалить',
+            isDanger: true
+          }, function() {
+            state.people = state.people.filter(function(p) { return p.id !== personId; });
+            saveToStorage();
+            showToast('Контакт удалён');
+            switchToContactsView();
+          });
+        }
+
+        function handleDeleteOperation(opId) {
+          var person = state.people.find(function(p) { return p.id === currentPersonId; });
+          if (!person) return;
+
+          var op = person.operations.find(function(o) { return o.id === opId; });
+          if (!op) return;
+
+          requestConfirmation({
+            title: 'Удалить операцию',
+            message: 'Удалить операцию на ' + formatMoney(op.amount) + ' (' + (op.comment || 'без комментария') + ')?',
+            okText: 'Да, удалить',
+            isDanger: true
+          }, function() {
+            person.operations = person.operations.filter(function(o) { return o.id !== opId; });
+            saveToStorage();
+            showToast('Операция удалена');
+            renderHeader();
+            renderOperationsList();
+          });
+        }
+
+        // --- Helper: Dynamic Amount Indicator ---
+        function updateAmountFeedback(inputEl, feedbackEl) {
+          var val = parseFloat(inputEl.value);
+          if (isNaN(val) || val === 0) {
+            feedbackEl.className = 'amount-feedback-badge neutral';
+            feedbackEl.innerHTML = '<span>ℹ️</span> 0 ₽ (нет изменения)';
+          } else if (val > 0) {
+            feedbackEl.className = 'amount-feedback-badge plus';
+            feedbackEl.innerHTML = '<span>↓</span> +' + val + ' ₽ (Вам должны)';
+          } else {
+            feedbackEl.className = 'amount-feedback-badge minus';
+            feedbackEl.innerHTML = '<span>↑</span> ' + val + ' ₽ (Вы должны)';
+          }
+        }
+
+        // --- Form Handlers ---
+        function handleAddPersonSubmit(e) {
+          e.preventDefault();
+          var nameInput = document.getElementById('input-person-name');
+          var amountInput = document.getElementById('input-person-amount');
+          var commentInput = document.getElementById('input-person-comment');
+
+          var name = (nameInput.value || '').trim();
+          if (!name) {
+            nameInput.focus();
+            return;
+          }
+
+          var amountRaw = (amountInput.value || '').trim();
+          var amount = amountRaw !== '' ? (parseFloat(amountRaw) || 0) : 0;
+          var customComment = (commentInput.value || '').trim();
+
+          var newPerson = {
+            id: generateId('person'),
+            name: name,
+            createdAt: Date.now(),
+            operations: []
+          };
+
+          // If starting balance was provided
+          if (amount !== 0) {
+            var defaultComment = 'Стартовый баланс';
+            var finalComment = customComment || defaultComment;
+            var now = new Date();
+            newPerson.operations.push({
+              id: generateId('op'),
+              timestamp: now.getTime(),
+              date: getTodayIso(),
+              amount: amount,
+              comment: finalComment
+            });
+          }
+
+          state.people.unshift(newPerson);
+          localStorage.removeItem(STORAGE_CLEARED_FLAG);
+          saveToStorage();
+
+          closeModal('modal-add-person');
+          document.getElementById('form-add-person').reset();
+          updateAmountFeedback(document.getElementById('input-person-amount'), document.getElementById('person-amount-feedback'));
+
+          showToast('Человек добавлен');
+          renderHeader();
+          renderContactsList();
+        }
+
+        function handleAddOperationSubmit(e) {
+          e.preventDefault();
+          var person = state.people.find(function(p) { return p.id === currentPersonId; });
+          if (!person) return;
+
+          var amountInput = document.getElementById('input-op-amount');
+          var dateInput = document.getElementById('input-op-date');
+          var commentInput = document.getElementById('input-op-comment');
+
+          var amountVal = parseFloat(amountInput.value);
+          if (isNaN(amountVal)) {
+            amountInput.focus();
+            return;
+          }
+
+          var dateVal = dateInput.value || getTodayIso();
+          var commentVal = (commentInput.value || '').trim();
+
+          // Auto-fill default comment if empty
+          if (!commentVal) {
+            if (amountVal > 0) {
+              commentVal = 'Увеличение баланса';
+            } else if (amountVal < 0) {
+              commentVal = 'Уменьшение баланса';
+            } else {
+              commentVal = 'Корректировка';
+            }
+          }
+
+          // Compute computer timestamp combining selected date with current time
+          var selectedParts = dateVal.split('-');
+          var now = new Date();
+          var opDate = new Date(
+            parseInt(selectedParts[0], 10),
+            parseInt(selectedParts[1], 10) - 1,
+            parseInt(selectedParts[2], 10),
+            now.getHours(),
+            now.getMinutes(),
+            now.getSeconds()
+          );
+
+          var newOp = {
+            id: generateId('op'),
+            timestamp: opDate.getTime(),
+            date: dateVal,
+            amount: amountVal,
+            comment: commentVal
+          };
+
+          person.operations.push(newOp);
+          saveToStorage();
+
+          closeModal('modal-add-operation');
+          document.getElementById('form-add-operation').reset();
+          updateAmountFeedback(document.getElementById('input-op-amount'), document.getElementById('op-amount-feedback'));
+
+          showToast('Операция добавлена');
+          renderHeader();
+          renderOperationsList();
+        }
+
+        // --- Backup & Settings Features (JSON & CSV with BOM + ;) ---
+        function exportToJson() {
+          var dataStr = JSON.stringify(state, null, 2);
+          var blob = new Blob([dataStr], { type: 'application/json;charset=utf-8;' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'debt_ledger_backup_' + getTodayIso() + '.json';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showToast('JSON скачан');
+        }
+
+        function importFromJson(file) {
+          if (!file) return;
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            try {
+              var parsed = JSON.parse(e.target.result);
+              if (parsed && Array.isArray(parsed.people)) {
+                requestConfirmation({
+                  title: 'Загрузить JSON',
+                  message: 'Заменить текущие данные информацией из файла? Существующие контакты будут перезаписаны.',
+                  okText: 'Да, заменить',
+                  isDanger: true
+                }, function() {
+                  state = parsed;
+                  localStorage.removeItem(STORAGE_CLEARED_FLAG);
+                  saveToStorage();
+                  showToast('Данные успешно загружены!');
+                  closeModal('modal-settings');
+                  switchToContactsView();
+                });
+              } else {
+                showToast('Ошибка: неверный формат JSON');
+              }
+            } catch (err) {
+              showToast('Ошибка чтения JSON: ' + err.message);
+            }
+          };
+          reader.readAsText(file);
+        }
+
+        function exportToCsv() {
+          var csvLines = [];
+          csvLines.push('"Имя";"Дата";"Таймстамп";"Сумма";"Комментарий"');
+
+          state.people.forEach(function(person) {
+            var personNameEscaped = (person.name || '').replace(/"/g, '""');
+            if (person.operations.length === 0) {
+              csvLines.push('"' + personNameEscaped + '";"";"";"0";"Без операций"');
+            } else {
+              person.operations.forEach(function(op) {
+                var commentEscaped = (op.comment || '').replace(/"/g, '""');
+                var line = '"' + personNameEscaped + '";' +
+                           '"' + (op.date || '') + '";' +
+                           '"' + (op.timestamp || '') + '";' +
+                           '"' + (op.amount || 0) + '";' +
+                           '"' + commentEscaped + '"';
+                csvLines.push(line);
+              });
+            }
+          });
+
+          var csvContent = '\uFEFF' + csvLines.join('\r\n');
+          var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'debt_ledger_' + getTodayIso() + '.csv';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showToast('CSV файл экспортирован');
+        }
+
+        function importFromCsv(file) {
+          if (!file) return;
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            try {
+              var text = e.target.result;
+              if (text.charCodeAt(0) === 0xFEFF) {
+                text = text.substr(1);
+              }
+              var lines = text.split(/\r?\n/);
+              if (lines.length < 2) {
+                showToast('CSV файл пуст');
+                return;
+              }
+
+              function parseCsvLine(line) {
+                var row = [];
+                var inQuotes = false;
+                var curVal = '';
+                for (var i = 0; i < line.length; i++) {
+                  var c = line[i];
+                  if (c === '"') {
+                    if (inQuotes && line[i + 1] === '"') {
+                      curVal += '"';
+                      i++;
+                    } else {
+                      inQuotes = !inQuotes;
+                    }
+                  } else if (c === ';' && !inQuotes) {
+                    row.push(curVal);
+                    curVal = '';
+                  } else {
+                    curVal += c;
+                  }
+                }
+                row.push(curVal);
+                return row;
+              }
+
+              requestConfirmation({
+                title: 'Импорт CSV',
+                message: 'Объединить импортируемые строки с текущими данными?',
+                okText: 'Да, добавить',
+                isDanger: false
+              }, function() {
+                var importedCount = 0;
+                var peopleMap = {};
+                var newPeopleList = JSON.parse(JSON.stringify(state.people));
+
+                newPeopleList.forEach(function(p) {
+                  peopleMap[p.name.trim().toLowerCase()] = p;
+                });
+
+                for (var i = 1; i < lines.length; i++) {
+                  var line = lines[i].trim();
+                  if (!line) continue;
+                  var cols = parseCsvLine(line);
+                  if (cols.length < 4) continue;
+
+                  var name = cols[0].trim();
+                  var date = cols[1].trim() || getTodayIso();
+                  var timestamp = parseInt(cols[2], 10) || new Date(date + 'T12:00:00').getTime();
+                  var amount = parseFloat(cols[3]) || 0;
+                  var comment = cols[4] ? cols[4].trim() : 'Импортировано';
+
+                  if (!name) continue;
+
+                  var key = name.toLowerCase();
+                  var person = peopleMap[key];
+                  if (!person) {
+                    person = {
+                      id: generateId('person'),
+                      name: name,
+                      createdAt: Date.now(),
+                      operations: []
+                    };
+                    peopleMap[key] = person;
+                    newPeopleList.push(person);
+                  }
+
+                  if (amount !== 0 || comment !== 'Без операций') {
+                    person.operations.push({
+                      id: generateId('op'),
+                      timestamp: timestamp,
+                      date: date,
+                      amount: amount,
+                      comment: comment
+                    });
+                    importedCount++;
+                  }
+                }
+
+                state.people = newPeopleList;
+                localStorage.removeItem(STORAGE_CLEARED_FLAG);
+                saveToStorage();
+                showToast('Импортировано операций: ' + importedCount);
+                closeModal('modal-settings');
+                switchToContactsView();
+              });
+            } catch (err) {
+              showToast('Ошибка импорта CSV: ' + err.message);
+            }
+          };
+          reader.readAsText(file);
+        }
+
+        // --- Demo Data Implementation ---
+        function generateDemoState() {
+          var now = Date.now();
+          var oneDay = 86400000;
+          var todayIso = getTodayIso();
+
+          return {
+            people: [
+              {
+                id: generateId('person'),
+                name: 'Алексей (Коллега)',
+                createdAt: now - oneDay * 10,
+                operations: [
+                  {
+                    id: generateId('op'),
+                    timestamp: now - oneDay * 8,
+                    date: todayIso,
+                    amount: 1500,
+                    comment: 'Обед в кафе'
+                  },
+                  {
+                    id: generateId('op'),
+                    timestamp: now - oneDay * 3,
+                    date: todayIso,
+                    amount: 500,
+                    comment: 'Кофе и перекус'
+                  },
+                  {
+                    id: generateId('op'),
+                    timestamp: now - oneDay * 1,
+                    date: todayIso,
+                    amount: -1000,
+                    comment: 'Частичный возврат'
+                  }
+                ]
+              },
+              {
+                id: generateId('person'),
+                name: 'Мария (Аренда)',
+                createdAt: now - oneDay * 20,
+                operations: [
+                  {
+                    id: generateId('op'),
+                    timestamp: now - oneDay * 15,
+                    date: todayIso,
+                    amount: -12000,
+                    comment: 'Залог за квартиру'
+                  },
+                  {
+                    id: generateId('op'),
+                    timestamp: now - oneDay * 2,
+                    date: todayIso,
+                    amount: 6000,
+                    comment: 'Оплатил половину'
+                  }
+                ]
+              },
+              {
+                id: generateId('person'),
+                name: 'Сергей Петров',
+                createdAt: now - oneDay * 5,
+                operations: [
+                  {
+                    id: generateId('op'),
+                    timestamp: now - oneDay * 4,
+                    date: todayIso,
+                    amount: 3200,
+                    comment: 'Покупка инструментов'
+                  }
+                ]
+              }
+            ]
+          };
+        }
+
+        function loadDemoData(skipConfirm) {
+          function applyDemo() {
+            state = generateDemoState();
+            localStorage.removeItem(STORAGE_CLEARED_FLAG);
+            saveToStorage();
+            showToast('Демо-данные загружены');
+            closeModal('modal-settings');
+            switchToContactsView();
+          }
+
+          if (skipConfirm) {
+            applyDemo();
+          } else {
+            requestConfirmation({
+              title: 'Загрузить демо',
+              message: 'Загрузить демонстрационные примеры? Текущие записи будут заменены.',
+              okText: 'Да, загрузить',
+              isDanger: false
+            }, applyDemo);
+          }
+        }
+
+        function clearAllData() {
+          requestConfirmation({
+            title: 'Очистить всё',
+            message: 'ВНИМАНИЕ! Вы действительно хотите удалить ВСЕ контакты и ВСЕ операции? Данные будут стёрты.',
+            okText: 'Да, удалить всё',
+            isDanger: true
+          }, function() {
+            state = { people: [] };
+            localStorage.setItem(STORAGE_CLEARED_FLAG, '1');
+            saveToStorage();
+            showToast('Все данные очищены');
+            closeModal('modal-settings');
+            switchToContactsView();
+          });
+        }
+
+        // --- Setup Event Listeners (Strictly NO inline listeners in HTML) ---
+        function initEvents() {
+          // Modal triggers
+          var btnOpenAddPerson = document.getElementById('btn-open-add-person');
+          if (btnOpenAddPerson) {
+            btnOpenAddPerson.addEventListener('click', function() {
+              document.getElementById('form-add-person').reset();
+              updateAmountFeedback(document.getElementById('input-person-amount'), document.getElementById('person-amount-feedback'));
+              openModal('modal-add-person', 'input-person-name');
+            });
+          }
+
+          var btnOpenAddOp = document.getElementById('btn-open-add-operation');
+          if (btnOpenAddOp) {
+            btnOpenAddOp.addEventListener('click', function() {
+              document.getElementById('form-add-operation').reset();
+              var dateInput = document.getElementById('input-op-date');
+              if (dateInput) {
+                dateInput.value = getTodayIso();
+              }
+              updateAmountFeedback(document.getElementById('input-op-amount'), document.getElementById('op-amount-feedback'));
+              openModal('modal-add-operation', 'input-op-amount');
+            });
+          }
+
+          var btnOpenSettings = document.getElementById('btn-open-settings');
+          if (btnOpenSettings) {
+            btnOpenSettings.addEventListener('click', function() {
+              openModal('modal-settings');
+            });
+          }
+
+          var btnBack = document.getElementById('btn-back-to-contacts');
+          if (btnBack) {
+            btnBack.addEventListener('click', function() {
+              switchToContactsView();
+            });
+          }
+
+          // In-App Confirm modal buttons
+          var btnConfirmOk = document.getElementById('btn-confirm-ok');
+          if (btnConfirmOk) {
+            btnConfirmOk.addEventListener('click', function() {
+              closeModal('modal-confirm');
+              if (typeof activeConfirmCallback === 'function') {
+                var cb = activeConfirmCallback;
+                activeConfirmCallback = null;
+                cb();
+              }
+            });
+          }
+
+          var btnConfirmCancel = document.getElementById('btn-confirm-cancel');
+          if (btnConfirmCancel) {
+            btnConfirmCancel.addEventListener('click', function() {
+              closeModal('modal-confirm');
+              activeConfirmCallback = null;
+            });
+          }
+
+          var btnConfirmClose = document.getElementById('btn-confirm-close');
+          if (btnConfirmClose) {
+            btnConfirmClose.addEventListener('click', function() {
+              closeModal('modal-confirm');
+              activeConfirmCallback = null;
+            });
+          }
+
+          // Modal Close buttons (data-close-modal)
+          var closeButtons = document.querySelectorAll('[data-close-modal]');
+          closeButtons.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              var targetModalId = btn.getAttribute('data-close-modal');
+              if (targetModalId) closeModal(targetModalId);
+            });
+          });
+
+          // Modal backdrop clicks to close
+          var backdrops = document.querySelectorAll('.modal-backdrop');
+          backdrops.forEach(function(backdrop) {
+            backdrop.addEventListener('click', function(e) {
+              if (e.target === backdrop) {
+                backdrop.classList.remove('open');
+                if (backdrop.id === 'modal-confirm') {
+                  activeConfirmCallback = null;
+                }
+              }
+            });
+          });
+
+          // ESC key to close modal
+          document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+              closeAllModals();
+              activeConfirmCallback = null;
+            }
+          });
+
+          // Amount inputs live feedback
+          var personAmountInput = document.getElementById('input-person-amount');
+          if (personAmountInput) {
+            personAmountInput.addEventListener('input', function() {
+              updateAmountFeedback(personAmountInput, document.getElementById('person-amount-feedback'));
+            });
+          }
+
+          var opAmountInput = document.getElementById('input-op-amount');
+          if (opAmountInput) {
+            opAmountInput.addEventListener('input', function() {
+              updateAmountFeedback(opAmountInput, document.getElementById('op-amount-feedback'));
+            });
+          }
+
+          // Form Submissions
+          var formAddPerson = document.getElementById('form-add-person');
+          if (formAddPerson) {
+            formAddPerson.addEventListener('submit', handleAddPersonSubmit);
+          }
+
+          var formAddOp = document.getElementById('form-add-operation');
+          if (formAddOp) {
+            formAddOp.addEventListener('submit', handleAddOperationSubmit);
+          }
+
+          // Search Input
+          var searchInput = document.getElementById('contact-search-input');
+          if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+              searchQuery = (e.target.value || '').trim();
+              renderContactsList();
+            });
+          }
+
+          // Date Filter Inputs
+          var filterFrom = document.getElementById('filter-date-from');
+          var filterTo = document.getElementById('filter-date-to');
+          var btnResetFilter = document.getElementById('btn-reset-filter');
+
+          if (filterFrom) {
+            filterFrom.addEventListener('change', function(e) {
+              dateFilter.from = e.target.value;
+              renderOperationsList();
+            });
+          }
+
+          if (filterTo) {
+            filterTo.addEventListener('change', function(e) {
+              dateFilter.to = e.target.value;
+              renderOperationsList();
+            });
+          }
+
+          if (btnResetFilter) {
+            btnResetFilter.addEventListener('click', function() {
+              dateFilter.from = '';
+              dateFilter.to = '';
+              if (filterFrom) filterFrom.value = '';
+              if (filterTo) filterTo.value = '';
+              renderOperationsList();
+            });
+          }
+
+          // Contact Card Clicks (Event Delegation on contacts-list)
+          var contactsList = document.getElementById('contacts-list');
+          if (contactsList) {
+            contactsList.addEventListener('click', function(e) {
+              var card = e.target.closest('.contact-card');
+              if (card) {
+                var pId = card.getAttribute('data-person-id');
+                if (pId) {
+                  switchToPersonView(pId);
+                }
+              }
+            });
+          }
+
+          // Operations List item deletion (Event Delegation on operations-list)
+          var operationsList = document.getElementById('operations-list');
+          if (operationsList) {
+            operationsList.addEventListener('click', function(e) {
+              var delBtn = e.target.closest('.btn-del-op');
+              if (delBtn) {
+                e.stopPropagation();
+                var opId = delBtn.getAttribute('data-op-id');
+                if (opId) {
+                  handleDeleteOperation(opId);
+                }
+              }
+            });
+          }
+
+          // Settings Actions
+          var btnExportJson = document.getElementById('btn-export-json');
+          if (btnExportJson) btnExportJson.addEventListener('click', exportToJson);
+
+          var fileInputJson = document.getElementById('file-input-json');
+          var btnTriggerImportJson = document.getElementById('btn-trigger-import-json');
+          if (btnTriggerImportJson && fileInputJson) {
+            btnTriggerImportJson.addEventListener('click', function() {
+              fileInputJson.value = '';
+              fileInputJson.click();
+            });
+            fileInputJson.addEventListener('change', function(e) {
+              if (e.target.files && e.target.files[0]) {
+                importFromJson(e.target.files[0]);
+              }
+            });
+          }
+
+          var btnExportCsv = document.getElementById('btn-export-csv');
+          if (btnExportCsv) btnExportCsv.addEventListener('click', exportToCsv);
+
+          var fileInputCsv = document.getElementById('file-input-csv');
+          var btnTriggerImportCsv = document.getElementById('btn-trigger-import-csv');
+          if (btnTriggerImportCsv && fileInputCsv) {
+            btnTriggerImportCsv.addEventListener('click', function() {
+              fileInputCsv.value = '';
+              fileInputCsv.click();
+            });
+            fileInputCsv.addEventListener('change', function(e) {
+              if (e.target.files && e.target.files[0]) {
+                importFromCsv(e.target.files[0]);
+              }
+            });
+          }
+
+          var btnLoadDemo = document.getElementById('btn-load-demo');
+          if (btnLoadDemo) btnLoadDemo.addEventListener('click', function() { loadDemoData(false); });
+
+          var btnClearAll = document.getElementById('btn-clear-all');
+          if (btnClearAll) btnClearAll.addEventListener('click', clearAllData);
+        }
+
+        // --- Initialization ---
+        function initApp() {
+          loadFromStorage();
+          initEvents();
+
+          var wasCleared = localStorage.getItem(STORAGE_CLEARED_FLAG) === '1';
+          if (state.people.length === 0 && !wasCleared) {
+            loadDemoData(true); // Populate demo without confirmation on fresh start
+          } else {
+            switchToContactsView();
+          }
+        }
+
+        // Run when DOM is ready
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+          initApp();
+        }
+      })();
+    </script>
+  </body>
+</html>
