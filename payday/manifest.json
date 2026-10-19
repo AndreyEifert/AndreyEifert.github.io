@@ -1,0 +1,18 @@
+{
+  "name": "Календарь-Трекер",
+  "short_name": "Календарь",
+  "description": "Мобильный календарь-трекер с возможностью подсчета сумм",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0f1115",
+  "theme-color": "#0f1115",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://flaticon.com",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
