@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Судоку PWA</title>
+    <link rel="stylesheet" href="./style.css">
+    <!-- Подключаем PWA Манифест -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#f2f2f7">
+</head>
+<body>
+
+    <div class="game-container">
+        <header class="main-header">
+            <div class="header-top-row">
+                <h1>Судоку</h1>
+                <button id="theme-toggle" class="theme-btn">🌓</button>
+            </div>
+            
+            <div class="header-bottom-row">
+                <select id="difficulty-select" class="difficulty-dropdown">
+                    <option value="easy">Легкий</option>
+                    <option value="medium" selected>Средний</option>
+                    <option value="hard">Сложный</option>
+                </select>
+                
+                <div class="info-panel">
+                    <span id="rank-badge" class="rank-badge">🌱 Новичок</span>
+                    <span id="score-label">⭐ <span id="score">0</span></span>
+                    <span id="timer">00:00</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Прогресс глобального рейтинга -->
+        <div class="rating-container">
+            <div class="rating-info">
+                <span>Глобальный опыт: <strong id="total-xp">0</strong> XP</span>
+                <span id="next-rank-info">До след. ранга: --</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div id="progress-bar-fill" class="progress-bar-fill"></div>
+            </div>
+        </div>
+
+        <!-- Игровое поле -->
+        <div id="sudoku-board" class="board"></div>
+
+        <!-- Управление -->
+        <div class="controls">
+            <button id="btn-new" class="btn">Новая игра</button>
+            <button id="btn-clear" class="btn btn-secondary">Стереть</button>
+        </div>
+
+        <!-- Панель ввода -->
+        <div class="num-pad">
+            <button class="pad-btn" data-num="1">1</button>
+            <button class="pad-btn" data-num="2">2</button>
+            <button class="pad-btn" data-num="3">3</button>
+            <button class="pad-btn" data-num="4">4</button>
+            <button class="pad-btn" data-num="5">5</button>
+            <button class="pad-btn" data-num="6">6</button>
+            <button class="pad-btn" data-num="7">7</button>
+            <button class="pad-btn" data-num="8">8</button>
+            <button class="pad-btn" data-num="9">9</button>
+            <button class="pad-btn erase" data-num="erase">⌫</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно победы -->
+    <div id="win-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-icon">🎉</div>
+            <h2>Победа!</h2>
+            <p>Вы успешно решили Судоку</p>
+            <div class="modal-stats">
+                <div>Время: <span id="final-time">00:00</span></div>
+                <div style="margin-top: 5px;">Счёт: <span id="final-score">0</span></div>
+            </div>
+            <button id="btn-modal-new" class="btn">Играть снова</button>
+        </div>
+    </div>
+
+    <script src="./script.js"></script>
+</body>
+</html>

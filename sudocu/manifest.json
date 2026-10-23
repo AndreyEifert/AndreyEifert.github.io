@@ -1,0 +1,19 @@
+{
+    "name": "Судоку Премиум PWA",
+    "short_name": "Судоку",
+    "description": "Мобильное приложение Судоку с автосохранением и рейтингом",
+    "start_url": "index.html",
+    "display": "standalone",
+    "background_color": "#f2f2f7",
+    "theme-color": "#007aff",
+    "orientation": "portrait",
+    "icons": [
+      {
+        "src": "./1.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any maskable"
+      }
+    ]
+  }
+  
